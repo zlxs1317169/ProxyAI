@@ -6,9 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Gemini 2.5 Pro model for ProxyAI users
+
 ### Fixed
 
 - SSL/TLS issues when connecting to Proxy API
+- UI issues when using images
+- Next Edits manual triggering 
 
 ## [3.2.1-241.1] - 2025-04-03
 
