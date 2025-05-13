@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.0-241.1] - 2025-05-13
+
 ### Added
 
 - Support for both Autocomplete and Next Edits
@@ -1020,7 +1022,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `OPENAI_API_KEY` persistence, key is saved in the OS password safe from now on
 
-[Unreleased]: https://github.com/carlrobertoh/ProxyAI/compare/v3.2.5-241.1...HEAD
+[Unreleased]: https://github.com/carlrobertoh/ProxyAI/compare/v3.3.0-241.1...HEAD
+[3.3.0-241.1]: https://github.com/carlrobertoh/ProxyAI/compare/v3.2.5-241.1...v3.3.0-241.1
 [3.2.5-241.1]: https://github.com/carlrobertoh/ProxyAI/compare/v3.2.4-241.1...v3.2.5-241.1
 [3.2.4-241.1]: https://github.com/carlrobertoh/ProxyAI/compare/v3.2.3-241.1...v3.2.4-241.1
 [3.2.3-241.1]: https://github.com/carlrobertoh/ProxyAI/compare/v3.2.2-241.1...v3.2.3-241.1
