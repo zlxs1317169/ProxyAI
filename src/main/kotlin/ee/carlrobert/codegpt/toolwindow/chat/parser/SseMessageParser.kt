@@ -193,8 +193,6 @@ class SseMessageParser : MessageParser {
             }
 
             line.trim() == CODE_FENCE -> {
-                // Invalid search/replace block - missing REPLACE marker
-                // Mark done
                 segments.add(CodeEnd(""))
                 parserState = ParserState.Outside
                 true
@@ -212,7 +210,7 @@ class SseMessageParser : MessageParser {
                     )
                 )
                 parserState = ParserState.InReplace(state.header, state.searchContent, newReplace)
-                false
+                true
             }
         }
     }

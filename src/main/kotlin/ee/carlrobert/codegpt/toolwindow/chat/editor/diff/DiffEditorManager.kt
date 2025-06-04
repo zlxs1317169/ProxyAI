@@ -6,7 +6,6 @@ import com.intellij.diff.util.DiffUtil
 import com.intellij.diff.util.Side
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.diff.DiffBundle
-import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.LogicalPosition
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.project.Project
@@ -27,13 +26,14 @@ class DiffEditorManager(
 
         application.executeOnPooledThread {
             runInEdt {
-                ensureDocumentWritable(project, document)
                 if (DiffUtil.executeWriteCommand(document, project, "Updating document") {
                         document.setText(
                             StringUtil.convertLineSeparators(
                                 currentText.replaceLast(searchContent.trim(), replaceContent.trim())
                             )
                         )
+
+                        diffViewer.scheduleRediff()
                     }) {
                     diffViewer.rediff()
                     scrollToLastChange(diffViewer)
@@ -50,8 +50,6 @@ class DiffEditorManager(
 
     fun applyAllChanges(): List<UnifiedDiffChange> {
         val document = diffViewer.getDocument(Side.LEFT)
-        ensureDocumentWritable(project, document)
-
         val allChanges = mutableListOf<UnifiedDiffChange>()
 
         while (true) {
@@ -66,9 +64,7 @@ class DiffEditorManager(
                 DiffBundle.message("message.replace.change.command")
             ) {
                 diffViewer.replaceChange(change, Side.RIGHT)
-                runInEdt {
-                    diffViewer.scheduleRediff()
-                }
+                diffViewer.scheduleRediff()
             }
             diffViewer.rediff(true)
 
@@ -84,12 +80,5 @@ class DiffEditorManager(
             LogicalPosition(change.lineFragment.startLine2, 0),
             ScrollType.CENTER
         )
-    }
-
-    private fun ensureDocumentWritable(project: Project, document: Document) {
-        if (!document.isWritable) {
-            DiffUtil.makeWritable(project, document)
-            document.setReadOnly(false)
-        }
     }
 }
