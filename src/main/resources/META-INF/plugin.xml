@@ -54,6 +54,8 @@
             instance="ee.carlrobert.codegpt.settings.configuration.ConfigurationConfigurable"/>
         <applicationConfigurable id="settings.codegpt.advanced" parentId="settings.codegpt" displayName="Advanced Settings"
             instance="ee.carlrobert.codegpt.settings.advanced.AdvancedSettingsConfigurable"/>
+        <applicationConfigurable id="settings.codegpt.metrics" parentId="settings.codegpt" displayName="提效度量"
+            instance="ee.carlrobert.codegpt.settings.metrics.MetricsSettingsConfigurable"/>
         <applicationConfigurable
           parentId="settings.codegpt"
           instance="ee.carlrobert.codegpt.telemetry.ui.preferences.TelemetryConfigurable"
@@ -74,11 +76,20 @@
         <applicationService serviceImplementation="ee.carlrobert.codegpt.codecompletions.psi.CompletionContextService"/>
         <applicationService serviceImplementation="ee.carlrobert.codegpt.services.llama.ServerLogsManager"/>
         <projectService serviceImplementation="ee.carlrobert.codegpt.services.ExecutableRunnerService"/>
+        
+        <!-- 提效度量系统服务 -->
+        <!-- 提效度量系统服务 -->
+        <applicationService serviceImplementation="ee.carlrobert.codegpt.metrics.ProductivityMetrics"/>
+        <applicationService serviceImplementation="ee.carlrobert.codegpt.metrics.MetricsIntegration"/>
+        <applicationService serviceImplementation="ee.carlrobert.codegpt.settings.metrics.MetricsSettings"/>
+        <postStartupActivity implementation="ee.carlrobert.codegpt.metrics.MetricsIntegration"/>
         <inline.completion.provider
           id="CodeGPTInlineCompletionProvider"
           implementation="ee.carlrobert.codegpt.codecompletions.DebouncedCodeCompletionProvider"/>
         <toolWindow id="ProxyAI" icon="ee.carlrobert.codegpt.Icons.DefaultSmall" anchor="right"
             factoryClass="ee.carlrobert.codegpt.toolwindow.ProxyAIToolWindowFactory"/>
+        <toolWindow id="ProxyAI-Metrics" icon="ee.carlrobert.codegpt.Icons.DefaultSmall" anchor="bottom"
+            factoryClass="ee.carlrobert.codegpt.metrics.ui.ProductivityDashboard"/>
         <notificationGroup id="proxyai.notification.group" displayType="BALLOON" key="notification.group.name"/>
         <notificationGroup id="proxyai.notification.sticky.group" displayType="STICKY_BALLOON" key="notification.group.sticky.name"/>
         <statusBarWidgetFactory order="first" id="ee.carlrobert.codegpt.statusbar.widget"
