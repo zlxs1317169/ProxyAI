@@ -132,8 +132,8 @@ public class CodeCompletionMetricsIntegration {
     private static long estimateManualEditTime(String originalCode, String suggestedCode) {
         // 简单的时间估算逻辑
         // 步骤 2: 优化行数计算
-        long originalLines = originalCode.lines().count();
-        long suggestedLines = suggestedCode.lines().count();
+        long originalLines = countLines(originalCode);
+        long suggestedLines = countLines(suggestedCode);
 
         // 步骤 3: 改进编辑距离权重
         long changedLines = Math.abs(suggestedLines - originalLines) +
@@ -141,6 +141,13 @@ public class CodeCompletionMetricsIntegration {
 
         // 步骤 1: 引入常量
         return changedLines * SECONDS_PER_LINE_MANUAL_EDIT * MILLIS_PER_SECOND; // 转换为毫秒
+    }
+    
+    private static long countLines(String text) {
+        if (text == null || text.isEmpty()) {
+            return 0;
+        }
+        return text.split("\\r?\\n").length;
     }
 
     private static int calculateEditDistance(String s1, String s2) {

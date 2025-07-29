@@ -11,6 +11,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.util.TextRange
 import ee.carlrobert.codegpt.CodeGPTKeys
 import ee.carlrobert.codegpt.codecompletions.edit.GrpcClientService
+import ee.carlrobert.codegpt.metrics.SafeMetricsCollector
 import ee.carlrobert.codegpt.settings.GeneralSettings
 import ee.carlrobert.codegpt.settings.configuration.ConfigurationSettings
 import ee.carlrobert.codegpt.settings.service.ModelRole.CODECOMPLETION_ROLE
@@ -43,6 +44,7 @@ class CodeCompletionEventListener(
     private val suffix =
         editor.document.getText(TextRange(cursorOffset, editor.document.textLength))
     private val cache = editor.project?.service<CodeCompletionCacheService>()
+    private val startTime = System.currentTimeMillis()
 
     override fun onOpen() {
         setLoading(true)
@@ -112,12 +114,16 @@ class CodeCompletionEventListener(
             CodeGPTKeys.REMAINING_PREDICTION_RESPONSE.set(editor, null)
 
             if (cancelled.get() || finalResult.isEmpty()) {
+                // 记录未接受的代码补全
+                recordCompletionMetrics(finalResult.toString(), false)
                 return
             }
 
             if (firstLineSent.get() && firstLine != null) {
                 val remainingContent = finalResult.removePrefix(firstLine!!).toString()
                 if (remainingContent.trim().isEmpty()) {
+                    // 记录部分接受的代码补全
+                    recordCompletionMetrics(firstLine ?: "", true)
                     return
                 }
 
@@ -131,10 +137,14 @@ class CodeCompletionEventListener(
                             .setPartialCompletion(parsedContent.removePrefix(firstLine ?: ""))
                             .build()
                     )
+                    
+                    // 记录接受的代码补全
+                    recordCompletionMetrics(parsedContent, true)
                 }
             } else {
                 val formattedLine = CodeCompletionFormatter(editor).format(finalResult.toString())
                 if (isNotAllowed(formattedLine)) {
+                    recordCompletionMetrics(formattedLine, false)
                     return
                 }
 
@@ -144,6 +154,9 @@ class CodeCompletionEventListener(
                     runInEdt {
                         channel.trySend(InlineCompletionGrayTextElement(parsedContent))
                     }
+                    
+                    // 记录接受的代码补全
+                    recordCompletionMetrics(parsedContent, true)
                 }
             }
         } finally {
@@ -153,6 +166,8 @@ class CodeCompletionEventListener(
 
     override fun onCancelled(messageBuilder: StringBuilder) {
         cancelled.set(true)
+        // 记录取消的代码补全
+        recordCompletionMetrics(messageBuilder.toString(), false)
         handleCompleted()
     }
 
@@ -198,5 +213,15 @@ class CodeCompletionEventListener(
             .getParserForFileExtension(editor.virtualFile.extension)
             .parse(prefix, suffix, input)
             .trimEnd()
+    }
+    
+    /**
+     * 记录代码补全指标
+     */
+    private fun recordCompletionMetrics(completionText: String, accepted: Boolean) {
+        val responseTime = System.currentTimeMillis() - startTime
+        SafeMetricsCollector.safeRecordCodeCompletionMetrics(
+            editor, completionText, accepted, responseTime
+        )
     }
 }

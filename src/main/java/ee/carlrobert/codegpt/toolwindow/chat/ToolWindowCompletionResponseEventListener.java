@@ -13,6 +13,7 @@ import ee.carlrobert.codegpt.conversations.Conversation;
 import ee.carlrobert.codegpt.conversations.ConversationService;
 import ee.carlrobert.codegpt.conversations.message.Message;
 import ee.carlrobert.codegpt.events.CodeGPTEvent;
+import ee.carlrobert.codegpt.metrics.SafeMetricsCollector;
 import ee.carlrobert.codegpt.telemetry.TelemetryAction;
 import ee.carlrobert.codegpt.toolwindow.chat.ui.ChatMessageResponseBody;
 import ee.carlrobert.codegpt.toolwindow.chat.ui.textarea.TotalTokensPanel;
@@ -120,6 +121,10 @@ abstract class ToolWindowCompletionResponseEventListener implements
   public void handleCompleted(String fullMessage, ChatCompletionParameters callParameters) {
     ConversationService.getInstance().saveMessage(fullMessage, callParameters);
 
+    // 记录AI响应和代码生成指标
+    String sessionId = callParameters.getConversation().getId().toString();
+    SafeMetricsCollector.safeRecordAIResponse(sessionId, fullMessage, extractCodeFromMessage(fullMessage));
+
     ApplicationManager.getApplication().invokeLater(() -> {
       try {
         responsePanel.enableAllActions(true);
@@ -164,5 +169,31 @@ abstract class ToolWindowCompletionResponseEventListener implements
     responseContainer.stopLoading();
     responseContainer.hideCaret();
     CompletionProgressNotifier.update(project, false);
+  }
+  
+  /**
+   * 从消息中提取代码块
+   */
+  private String extractCodeFromMessage(String message) {
+    if (message == null || message.isEmpty()) {
+      return "";
+    }
+    
+    StringBuilder codeBuilder = new StringBuilder();
+    String[] lines = message.split("\n");
+    boolean inCodeBlock = false;
+    
+    for (String line : lines) {
+      if (line.trim().startsWith("```")) {
+        inCodeBlock = !inCodeBlock;
+        continue;
+      }
+      
+      if (inCodeBlock) {
+        codeBuilder.append(line).append("\n");
+      }
+    }
+    
+    return codeBuilder.toString().trim();
   }
 }

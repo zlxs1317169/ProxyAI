@@ -27,6 +27,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <postStartupActivity implementation="ee.carlrobert.codegpt.CodeGPTProjectActivity"/>
         <postStartupActivity implementation="ee.carlrobert.codegpt.CodeGPTUpdateActivity"/>
+        <postStartupActivity implementation="ee.carlrobert.codegpt.metrics.MetricsStartupActivity"/>
         <editorFactoryListener implementation="ee.carlrobert.codegpt.CodeGPTEditorFactoryListener"/>
         <applicationConfigurable id="settings.codegpt" parentId="tools" displayName="ProxyAI"
             instance="ee.carlrobert.codegpt.settings.GeneralSettingsConfigurable"/>
@@ -78,11 +79,9 @@
         <projectService serviceImplementation="ee.carlrobert.codegpt.services.ExecutableRunnerService"/>
         
         <!-- 提效度量系统服务 -->
-        <!-- 提效度量系统服务 -->
         <applicationService serviceImplementation="ee.carlrobert.codegpt.metrics.ProductivityMetrics"/>
         <applicationService serviceImplementation="ee.carlrobert.codegpt.metrics.MetricsIntegration"/>
         <applicationService serviceImplementation="ee.carlrobert.codegpt.settings.metrics.MetricsSettings"/>
-        <postStartupActivity implementation="ee.carlrobert.codegpt.metrics.MetricsIntegration"/>
         <inline.completion.provider
           id="CodeGPTInlineCompletionProvider"
           implementation="ee.carlrobert.codegpt.codecompletions.DebouncedCodeCompletionProvider"/>
@@ -296,6 +295,21 @@
               id="CodeGPT.ReviewChanges"
               text="Review Changes"
               class="ee.carlrobert.codegpt.actions.ReviewChangesAction"/>
+        </group>
+        
+        <!-- 指标系统调试操作 -->
+        <group id="CodeGPT.MetricsDebugGroup"
+               text="ProxyAI 指标调试"
+               popup="true">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <action
+                id="CodeGPT.ValidateMetrics"
+                text="验证指标收集系统"
+                class="ee.carlrobert.codegpt.actions.ValidateMetricsAction"/>
+            <action
+                id="CodeGPT.GenerateTestMetrics"
+                text="生成测试指标数据"
+                class="ee.carlrobert.codegpt.actions.GenerateTestMetricsAction"/>
         </group>
     </actions>
 </idea-plugin>

@@ -2,6 +2,7 @@ package ee.carlrobert.codegpt.completions;
 
 import com.intellij.openapi.project.Project;
 import ee.carlrobert.codegpt.codecompletions.CompletionProgressNotifier;
+import ee.carlrobert.codegpt.metrics.SafeMetricsCollector;
 import ee.carlrobert.codegpt.settings.GeneralSettings;
 import ee.carlrobert.codegpt.telemetry.TelemetryAction;
 import ee.carlrobert.llm.client.openai.completion.ErrorDetails;
@@ -22,6 +23,10 @@ public class ToolwindowChatCompletionRequestHandler {
 
   public void call(ChatCompletionParameters callParameters) {
     try {
+      // 开始聊天会话指标收集
+      String sessionId = callParameters.getConversation().getId().toString();
+      SafeMetricsCollector.safeStartChatSession(sessionId, "chat_completion");
+      
       eventSource = startCall(callParameters);
     } catch (TotalUsageExceededException e) {
       completionResponseEventListener.handleTokensExceeded(

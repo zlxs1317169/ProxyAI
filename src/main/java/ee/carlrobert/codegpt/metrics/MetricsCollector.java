@@ -165,7 +165,7 @@ public class MetricsCollector implements StartupActivity {
      * AI代码补全使用记录
      */
     public void recordAICompletionUsage(String language, String completionText, boolean accepted, long responseTime) {
-        int suggestedLines = completionText.split("\n").length;
+        int suggestedLines = countLines(completionText);
         int acceptedLines = accepted ? suggestedLines : 0;
         
         ProductivityMetrics.getInstance().recordCodeCompletion(
@@ -183,12 +183,19 @@ public class MetricsCollector implements StartupActivity {
      */
     public void recordAIChatCodeGeneration(String generatedCode, String appliedCode, 
                                          long sessionDuration, String taskType) {
-        int generatedLines = generatedCode.split("\n").length;
-        int appliedLines = appliedCode.split("\n").length;
+        int generatedLines = countLines(generatedCode);
+        int appliedLines = countLines(appliedCode);
         
         ProductivityMetrics.getInstance().recordChatCodeGeneration(
             generatedLines, appliedLines, sessionDuration, taskType
         );
+    }
+    
+    private int countLines(String text) {
+        if (text == null || text.isEmpty()) {
+            return 0;
+        }
+        return text.split("\\r?\\n").length;
     }
     
     /**
