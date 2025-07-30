@@ -202,6 +202,44 @@ public final class ProductivityMetrics implements PersistentStateComponent<Produ
             .sum();
     }
     
+    /**
+     * 清除所有统计数据
+     */
+    public void clearAllData() {
+        state.codeCompletions.clear();
+        state.chatCodeGenerations.clear();
+        state.timeSavings.clear();
+        state.debuggingMetrics.clear();
+        state.codeQualityMetrics.clear();
+        state.learningMetrics.clear();
+        state.dailyStats.clear();
+        
+        System.out.println("所有提效统计数据已清除");
+    }
+    
+    /**
+     * 清除指定日期范围的数据
+     */
+    public void clearDataByDateRange(String startDate, String endDate) {
+        state.codeCompletions.removeIf(m -> isInDateRange(m.timestamp, startDate, endDate));
+        state.chatCodeGenerations.removeIf(m -> isInDateRange(m.timestamp, startDate, endDate));
+        state.timeSavings.removeIf(m -> isInDateRange(m.timestamp, startDate, endDate));
+        state.debuggingMetrics.removeIf(m -> isInDateRange(m.timestamp, startDate, endDate));
+        state.codeQualityMetrics.removeIf(m -> isInDateRange(m.timestamp, startDate, endDate));
+        state.learningMetrics.removeIf(m -> isInDateRange(m.timestamp, startDate, endDate));
+        
+        // 清除对应日期的每日统计
+        state.dailyStats.entrySet().removeIf(entry -> 
+            entry.getKey().compareTo(startDate) >= 0 && entry.getKey().compareTo(endDate) <= 0);
+        
+        System.out.println("已清除 " + startDate + " 到 " + endDate + " 的统计数据");
+    }
+    
+    private boolean isInDateRange(String timestamp, String startDate, String endDate) {
+        String date = timestamp.substring(0, 10); // 提取日期部分 YYYY-MM-DD
+        return date.compareTo(startDate) >= 0 && date.compareTo(endDate) <= 0;
+    }
+    
     // ==================== 数据模型 ====================
     
     public static class State {

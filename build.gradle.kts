@@ -180,6 +180,17 @@ tasks {
         gradleVersion = properties("gradleVersion").get()
     }
 
+    // 设置编译时的字符编码
+    withType<JavaCompile> {
+        options.encoding = "UTF-8"
+    }
+
+    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+        kotlinOptions {
+            jvmTarget = "17"
+        }
+    }
+
     prepareSandbox {
         dependsOn("updateSubmodules")
         from(layout.projectDirectory.dir("src/main/cpp/llama.cpp")) {

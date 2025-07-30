@@ -28,6 +28,7 @@
         <postStartupActivity implementation="ee.carlrobert.codegpt.CodeGPTProjectActivity"/>
         <postStartupActivity implementation="ee.carlrobert.codegpt.CodeGPTUpdateActivity"/>
         <postStartupActivity implementation="ee.carlrobert.codegpt.metrics.MetricsStartupActivity"/>
+        <postStartupActivity implementation="ee.carlrobert.codegpt.metrics.EnhancedMetricsStartupActivity"/>
         <editorFactoryListener implementation="ee.carlrobert.codegpt.CodeGPTEditorFactoryListener"/>
         <applicationConfigurable id="settings.codegpt" parentId="tools" displayName="ProxyAI"
             instance="ee.carlrobert.codegpt.settings.GeneralSettingsConfigurable"/>
