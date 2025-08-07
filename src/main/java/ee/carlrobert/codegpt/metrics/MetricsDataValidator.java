@@ -171,10 +171,7 @@ public class MetricsDataValidator {
                 return false;
             }
             
-            // 尝试记录一个测试指标
-            metrics.recordCodeCompletion("test", 1, 1, 100L);
-            
-            // 验证是否能正常获取数据
+            // 只验证是否能正常获取数据，不记录测试数据
             ProductivityMetrics.ProductivityReport report = metrics.getProductivityReport(1);
             return report != null;
             

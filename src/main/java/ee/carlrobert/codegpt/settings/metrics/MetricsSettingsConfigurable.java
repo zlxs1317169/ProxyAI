@@ -33,7 +33,9 @@ public class MetricsSettingsConfigurable implements Configurable {
         return settingsComponent.isMetricsEnabled() != settings.isMetricsEnabled() ||
                settingsComponent.isAutoExportEnabled() != settings.isAutoExportEnabled() ||
                settingsComponent.getExportInterval() != settings.getExportInterval() ||
-               settingsComponent.isDetailedLoggingEnabled() != settings.isDetailedLoggingEnabled();
+               settingsComponent.isDetailedLoggingEnabled() != settings.isDetailedLoggingEnabled() ||
+               settingsComponent.isAutoDetectionEnabled() != settings.isAutoDetectionEnabled() ||
+               settingsComponent.isOnlyTrackAIUsage() != settings.isOnlyTrackAIUsage();
     }
     
     @Override
@@ -43,6 +45,18 @@ public class MetricsSettingsConfigurable implements Configurable {
         settings.setAutoExportEnabled(settingsComponent.isAutoExportEnabled());
         settings.setExportInterval(settingsComponent.getExportInterval());
         settings.setDetailedLoggingEnabled(settingsComponent.isDetailedLoggingEnabled());
+        settings.setAutoDetectionEnabled(settingsComponent.isAutoDetectionEnabled());
+        settings.setOnlyTrackAIUsage(settingsComponent.isOnlyTrackAIUsage());
+        
+        // 如果用户选择了"仅跟踪真实AI使用"，显示提示信息
+        if (settingsComponent.isOnlyTrackAIUsage()) {
+            JOptionPane.showMessageDialog(settingsComponent.getPanel(),
+                "已启用\"仅跟踪真实AI使用\"模式。\n" +
+                "现在只有在真正使用ProxyAI功能时才会记录统计数据，\n" +
+                "这将提供更准确的效能度量结果。",
+                "设置已保存",
+                JOptionPane.INFORMATION_MESSAGE);
+        }
     }
     
     @Override
@@ -52,6 +66,8 @@ public class MetricsSettingsConfigurable implements Configurable {
         settingsComponent.setAutoExportEnabled(settings.isAutoExportEnabled());
         settingsComponent.setExportInterval(settings.getExportInterval());
         settingsComponent.setDetailedLoggingEnabled(settings.isDetailedLoggingEnabled());
+        settingsComponent.setAutoDetectionEnabled(settings.isAutoDetectionEnabled());
+        settingsComponent.setOnlyTrackAIUsage(settings.isOnlyTrackAIUsage());
     }
     
     @Override

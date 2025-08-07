@@ -27,13 +27,12 @@ public class BubbleSort {
             // 内层循环进行相邻元素的比较和交换
             // n-1-i 是因为每次外层循环结束后，最大的 i 个元素已经排好序在数组的末尾
             for (int j = 0; j < n - 1 - i; j++) {
-                // 如果当前元素大于下一个元素，则交换它们
                 if (arr[j] > arr[j + 1]) {
                     // 交换 arr[j] 和 arr[j+1]
                     int temp = arr[j];
                     arr[j] = arr[j + 1];
                     arr[j + 1] = temp;
-                    swapped = true; // 发生了交换
+                    swapped = true; // 标记发生了交换
                 }
             }
 
@@ -45,7 +44,6 @@ public class BubbleSort {
     }
 
     public static void main(String[] args) {
-
         int[] arr1 = {30, 5, 18, 2, 45, 10};
         System.out.print("Original array 1: ");
         printArray(arr1);

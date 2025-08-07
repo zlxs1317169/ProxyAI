@@ -24,102 +24,53 @@ public class GenerateTestMetricsAction extends AnAction {
     public void actionPerformed(@NotNull AnActionEvent e) {
         try {
             ProductivityMetrics metrics = ProductivityMetrics.getInstance();
-            if (metrics == null) {
-                showNotification(e, "错误", "无法获取ProductivityMetrics实例", NotificationType.ERROR);
-                return;
+            
+            // 生成代码补全测试数据
+            String[] languages = {"java", "python", "javascript", "typescript", "kotlin"};
+            for (int i = 0; i < 5; i++) {
+                String language = languages[random.nextInt(languages.length)];
+                int suggestedLines = 3 + random.nextInt(12); // 3-15行
+                int acceptedLines = Math.max(1, suggestedLines - random.nextInt(3)); // 接受大部分
+                long responseTime = 50L + random.nextInt(200); // 50-250ms
+                
+                metrics.recordCodeCompletion(language, suggestedLines, acceptedLines, responseTime);
             }
             
-            // 生成测试数据
-            generateTestData(metrics);
+            // 生成聊天代码生成测试数据
+            String[] taskTypes = {"bug_fix", "feature_dev", "refactor", "explain", "optimize"};
+            for (int i = 0; i < 3; i++) {
+                int generatedLines = 8 + random.nextInt(15); // 8-23行
+                int appliedLines = Math.max(1, generatedLines - random.nextInt(3)); // 应用大部分
+                long sessionDuration = 20000L + random.nextInt(40000); // 20-60秒
+                String taskType = taskTypes[random.nextInt(taskTypes.length)];
+                
+                metrics.recordChatCodeGeneration(generatedLines, appliedLines, sessionDuration, taskType);
+            }
             
-            showNotification(e, "测试数据已生成", 
-                "已成功生成测试指标数据，可以在提效统计面板中查看", 
+            // 生成时间节省测试数据
+            for (int i = 0; i < 2; i++) {
+                String taskType = taskTypes[random.nextInt(taskTypes.length)];
+                long traditionalTime = 300000L + random.nextInt(600000); // 5-15分钟
+                long aiAssistedTime = traditionalTime / 2 + random.nextInt((int)(traditionalTime / 4)); // AI辅助节省时间
+                int linesOfCode = 20 + random.nextInt(50);
+                
+                metrics.recordTimeSaving(taskType, traditionalTime, aiAssistedTime, linesOfCode);
+            }
+            
+            showNotification(e, "测试数据生成完成", 
+                "已生成测试指标数据:\n" +
+                "- 5个代码补全记录\n" +
+                "- 3个聊天代码生成记录\n" +
+                "- 2个时间节省记录", 
                 NotificationType.INFORMATION);
             
+            System.out.println("✅ 测试指标数据生成完成");
+            
         } catch (Exception ex) {
-            showNotification(e, "生成失败", 
+            showNotification(e, "操作失败", 
                 "生成测试数据时发生错误: " + ex.getMessage(), 
                 NotificationType.ERROR);
         }
-    }
-    
-    /**
-     * 生成测试指标数据
-     */
-    private void generateTestData(ProductivityMetrics metrics) {
-        // 生成代码补全数据
-        for (int i = 0; i < 10; i++) {
-            String[] languages = {"java", "python", "javascript", "kotlin", "cpp"};
-            String language = languages[random.nextInt(languages.length)];
-            int suggestedLines = random.nextInt(10) + 1;
-            int acceptedLines = random.nextInt(suggestedLines + 1);
-            long responseTime = random.nextInt(500) + 50;
-            
-            metrics.recordCodeCompletion(language, suggestedLines, acceptedLines, responseTime);
-        }
-        
-        // 生成聊天代码生成数据
-        for (int i = 0; i < 5; i++) {
-            String[] taskTypes = {"bug_fix", "feature_dev", "refactor", "explain", "optimize"};
-            String taskType = taskTypes[random.nextInt(taskTypes.length)];
-            int generatedLines = random.nextInt(50) + 10;
-            int appliedLines = random.nextInt(generatedLines + 1);
-            long sessionDuration = random.nextInt(300000) + 30000; // 30秒到5分钟
-            
-            metrics.recordChatCodeGeneration(generatedLines, appliedLines, sessionDuration, taskType);
-        }
-        
-        // 生成时间节省数据
-        for (int i = 0; i < 8; i++) {
-            String[] taskTypes = {"coding", "debugging", "refactoring", "documentation", "testing"};
-            String taskType = taskTypes[random.nextInt(taskTypes.length)];
-            long traditionalTime = random.nextInt(1800000) + 300000; // 5分钟到30分钟
-            long aiAssistedTime = (long) (traditionalTime * (0.3 + random.nextDouble() * 0.4)); // 30%-70%的时间
-            int linesOfCode = random.nextInt(100) + 10;
-            
-            metrics.recordTimeSaving(taskType, traditionalTime, aiAssistedTime, linesOfCode);
-        }
-        
-        // 生成调试时间节省数据
-        for (int i = 0; i < 3; i++) {
-            String[] issueTypes = {"syntax_error", "logic_error", "performance_issue", "integration_issue"};
-            String issueType = issueTypes[random.nextInt(issueTypes.length)];
-            long debugTimeWithAI = random.nextInt(600000) + 60000; // 1-10分钟
-            long debugTimeWithoutAI = (long) (debugTimeWithAI * (1.5 + random.nextDouble() * 1.5)); // 1.5-3倍时间
-            
-            metrics.recordDebuggingTimeSaving(debugTimeWithoutAI, debugTimeWithAI, issueType);
-        }
-        
-        // 生成代码质量改进数据
-        for (int i = 0; i < 4; i++) {
-            String[] metricTypes = {"complexity", "coverage", "maintainability", "performance"};
-            String[] improvementTypes = {"refactor", "optimize", "review", "cleanup"};
-            String metricType = metricTypes[random.nextInt(metricTypes.length)];
-            String improvementType = improvementTypes[random.nextInt(improvementTypes.length)];
-            double beforeValue = 50 + random.nextDouble() * 30; // 50-80
-            double afterValue = beforeValue + random.nextDouble() * 20; // 改进后的值
-            
-            metrics.recordCodeQualityImprovement(metricType, beforeValue, afterValue, improvementType);
-        }
-        
-        // 生成学习活动数据
-        for (int i = 0; i < 6; i++) {
-            String[] topicTypes = {"new_framework", "debugging", "best_practices", "algorithm", "design_pattern"};
-            String topicType = topicTypes[random.nextInt(topicTypes.length)];
-            int questionsAsked = random.nextInt(10) + 1;
-            int conceptsLearned = Math.max(1, questionsAsked / 2 + random.nextInt(3));
-            long learningTime = random.nextInt(1800000) + 300000; // 5-30分钟
-            
-            metrics.recordLearningActivity(topicType, questionsAsked, conceptsLearned, learningTime);
-        }
-        
-        System.out.println("✅ 已生成测试指标数据:");
-        System.out.println("- 代码补全记录: 10条");
-        System.out.println("- 聊天代码生成: 5条");
-        System.out.println("- 时间节省记录: 8条");
-        System.out.println("- 调试时间节省: 3条");
-        System.out.println("- 代码质量改进: 4条");
-        System.out.println("- 学习活动记录: 6条");
     }
     
     /**

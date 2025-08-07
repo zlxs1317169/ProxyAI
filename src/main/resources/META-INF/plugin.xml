@@ -82,6 +82,7 @@
         <!-- 提效度量系统服务 -->
         <applicationService serviceImplementation="ee.carlrobert.codegpt.metrics.ProductivityMetrics"/>
         <applicationService serviceImplementation="ee.carlrobert.codegpt.metrics.MetricsIntegration"/>
+        <applicationService serviceImplementation="ee.carlrobert.codegpt.metrics.AIUsageTracker"/>
         <applicationService serviceImplementation="ee.carlrobert.codegpt.settings.metrics.MetricsSettings"/>
         <inline.completion.provider
           id="CodeGPTInlineCompletionProvider"
@@ -311,6 +312,14 @@
                 id="CodeGPT.GenerateTestMetrics"
                 text="生成测试指标数据"
                 class="ee.carlrobert.codegpt.actions.GenerateTestMetricsAction"/>
+            <action
+                id="CodeGPT.TestMetricsIntegration"
+                text="测试效能度量集成"
+                class="ee.carlrobert.codegpt.actions.TestMetricsIntegrationAction"/>
+            <action
+                id="CodeGPT.MetricsMonitor"
+                text="效能度量监控面板"
+                class="ee.carlrobert.codegpt.actions.MetricsMonitorAction"/>
         </group>
     </actions>
 </idea-plugin>

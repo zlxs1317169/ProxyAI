@@ -7,7 +7,7 @@ import ee.carlrobert.codegpt.completions.CommitMessageCompletionParameters
 import ee.carlrobert.codegpt.completions.CompletionRequestService
 import ee.carlrobert.codegpt.settings.prompts.CommitMessageTemplate
 
-class GenerateCommitMessageAction : BaseCommitWorkflowAction() {
+class  GenerateCommitMessageAction : BaseCommitWorkflowAction() {
 
     override fun getTitle(commitWorkflowUi: CommitWorkflowUi): String {
         return "Generate Message"

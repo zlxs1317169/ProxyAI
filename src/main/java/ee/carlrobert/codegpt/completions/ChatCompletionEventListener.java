@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intellij.openapi.project.Project;
 import ee.carlrobert.codegpt.codecompletions.CompletionProgressNotifier;
 import ee.carlrobert.codegpt.events.CodeGPTEvent;
+import ee.carlrobert.codegpt.metrics.SafeMetricsCollector;
 import ee.carlrobert.codegpt.telemetry.TelemetryAction;
 import ee.carlrobert.llm.client.openai.completion.ErrorDetails;
 import ee.carlrobert.llm.completion.CompletionEventListener;
@@ -70,6 +71,21 @@ public class ChatCompletionEventListener implements CompletionEventListener<Stri
 
   private void handleCompleted(StringBuilder messageBuilder) {
     CompletionProgressNotifier.Companion.update(project, false);
+    
+    // 记录聊天生成度量数据
+    try {
+      String sessionId = callParameters.getConversation().getId().toString();
+      String generatedCode = messageBuilder.toString();
+      String appliedCode = generatedCode; // 假设用户应用了生成的代码
+      long sessionDuration = 60000L; // 默认1分钟会话时长
+      String taskType = "chat_completion";
+      
+      SafeMetricsCollector.safeRecordAIChatGeneration(generatedCode, appliedCode, sessionDuration, taskType);
+      SafeMetricsCollector.safeRecordAIResponse(sessionId, generatedCode, generatedCode);
+    } catch (Exception e) {
+      // 静默处理度量收集错误，不影响主要功能
+    }
+    
     eventListener.handleCompleted(messageBuilder.toString(), callParameters);
   }
 

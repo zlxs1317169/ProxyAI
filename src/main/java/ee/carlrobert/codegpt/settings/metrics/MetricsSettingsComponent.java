@@ -7,9 +7,13 @@ import ee.carlrobert.codegpt.metrics.ProductivityMetrics;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
 /**
  * 提效度量设置组件
@@ -21,6 +25,8 @@ public class MetricsSettingsComponent {
     private final JBCheckBox autoExportEnabledCheckBox = new JBCheckBox("自动导出报告");
     private final JSpinner exportIntervalSpinner = new JSpinner(new SpinnerNumberModel(24, 1, 168, 1));
     private final JBCheckBox detailedLoggingCheckBox = new JBCheckBox("启用详细日志记录");
+    private final JBCheckBox autoDetectionCheckBox = new JBCheckBox("启用自动检测代码补全");
+    private final JBCheckBox onlyTrackAIUsageCheckBox = new JBCheckBox("仅跟踪真实AI使用");
     
     private final JButton clearDataButton = new JButton("清空所有数据");
     private final JButton exportReportButton = new JButton("立即导出报告");
@@ -58,6 +64,9 @@ public class MetricsSettingsComponent {
         JPanel panel = FormBuilder.createFormBuilder()
             .addComponent(metricsEnabledCheckBox, 1)
             .addVerticalGap(10)
+            .addComponent(onlyTrackAIUsageCheckBox, 1)
+            .addComponent(autoDetectionCheckBox, 1)
+            .addVerticalGap(10)
             .addComponent(autoExportEnabledCheckBox, 1)
             .addLabeledComponent(new JBLabel("导出间隔(小时):"), exportIntervalSpinner, 1, false)
             .addVerticalGap(10)
@@ -66,7 +75,18 @@ public class MetricsSettingsComponent {
             .getPanel();
         
         panel.setBorder(new TitledBorder("基本设置"));
-        return panel;
+        
+        // 添加提示信息
+        JPanel wrapperPanel = new JPanel(new BorderLayout());
+        wrapperPanel.add(panel, BorderLayout.CENTER);
+        
+        JPanel infoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JLabel infoLabel = new JLabel("<html><small><b>建议：</b>启用\"仅跟踪真实AI使用\"以获得更准确的统计数据</small></html>");
+        infoLabel.setForeground(new Color(100, 100, 100));
+        infoPanel.add(infoLabel);
+        wrapperPanel.add(infoPanel, BorderLayout.SOUTH);
+        
+        return wrapperPanel;
     }
     
     private JPanel createStatisticsPanel() {
@@ -122,12 +142,33 @@ public class MetricsSettingsComponent {
             autoExportEnabledCheckBox.setEnabled(enabled);
             exportIntervalSpinner.setEnabled(enabled && autoExportEnabledCheckBox.isSelected());
             detailedLoggingCheckBox.setEnabled(enabled);
+            autoDetectionCheckBox.setEnabled(enabled);
+            onlyTrackAIUsageCheckBox.setEnabled(enabled);
             exportReportButton.setEnabled(enabled);
             viewStatsButton.setEnabled(enabled);
         });
         
         autoExportEnabledCheckBox.addActionListener(e -> {
             exportIntervalSpinner.setEnabled(autoExportEnabledCheckBox.isSelected());
+        });
+        
+        // 互斥选项处理
+        onlyTrackAIUsageCheckBox.addActionListener(e -> {
+            if (onlyTrackAIUsageCheckBox.isSelected()) {
+                autoDetectionCheckBox.setSelected(false);
+            }
+        });
+        
+        autoDetectionCheckBox.addActionListener(e -> {
+            if (autoDetectionCheckBox.isSelected()) {
+                onlyTrackAIUsageCheckBox.setSelected(false);
+                // 显示警告
+                JOptionPane.showMessageDialog(mainPanel,
+                    "警告：启用自动检测可能会将普通编辑误判为AI代码补全，\n" +
+                    "建议使用\"仅跟踪真实AI使用\"选项以获得更准确的数据。",
+                    "警告",
+                    JOptionPane.WARNING_MESSAGE);
+            }
         });
         
         // 按钮事件
@@ -196,14 +237,53 @@ public class MetricsSettingsComponent {
             ProductivityMetrics.ProductivityReport report = 
                 ProductivityMetrics.getInstance().getProductivityReport(30);
             
-            // 这里可以实现实际的文件导出逻辑
-            JOptionPane.showMessageDialog(mainPanel, 
-                "报告导出功能开发中...\n\n" +
-                "当前数据:\n" +
-                "- 节省时间: " + String.format("%.1f", report.totalTimeSavedHours) + " 小时\n" +
-                "- 效率提升: " + String.format("%.1f", report.avgEfficiencyGain) + "%\n" +
-                "- 代码接受率: " + String.format("%.1f", report.avgCodeAcceptanceRate * 100) + "%", 
-                "导出报告", JOptionPane.INFORMATION_MESSAGE);
+            // 实现文件导出逻辑
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle("导出效能报告");
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            fileChooser.setSelectedFile(new java.io.File("ProxyAI_效能报告_" + 
+                java.time.LocalDate.now().toString() + ".txt"));
+            
+            int userSelection = fileChooser.showSaveDialog(mainPanel);
+            
+            if (userSelection == JFileChooser.APPROVE_OPTION) {
+                java.io.File fileToSave = fileChooser.getSelectedFile();
+                
+                // 生成详细报告内容
+                StringBuilder reportContent = new StringBuilder();
+                reportContent.append("ProxyAI 效能度量报告\n");
+                reportContent.append("生成时间: ").append(java.time.LocalDateTime.now()).append("\n");
+                reportContent.append("统计周期: 最近30天\n\n");
+                
+                reportContent.append("=== 总体统计 ===\n");
+                reportContent.append("总节省时间: ").append(String.format("%.1f", report.totalTimeSavedHours)).append(" 小时\n");
+                reportContent.append("平均效率提升: ").append(String.format("%.1f", report.avgEfficiencyGain)).append("%\n");
+                reportContent.append("代码接受率: ").append(String.format("%.1f", report.avgCodeAcceptanceRate * 100)).append("%\n");
+                reportContent.append("生成代码行数: ").append(report.totalLinesGenerated).append(" 行\n\n");
+                
+                reportContent.append("=== 效率分析 ===\n");
+                if (report.avgEfficiencyGain > 50) {
+                    reportContent.append("🎉 AI助手显著提升了您的开发效率！\n");
+                } else if (report.avgEfficiencyGain > 20) {
+                    reportContent.append("✅ AI助手有效提升了您的开发效率\n");
+                } else {
+                    reportContent.append("📈 AI助手正在逐步提升您的开发效率\n");
+                }
+                
+                reportContent.append("\n=== 建议 ===\n");
+                reportContent.append("- 继续使用AI代码补全功能以提高编程效率\n");
+                reportContent.append("- 定期查看效能统计以了解改进情况\n");
+                reportContent.append("- 启用\"仅跟踪真实AI使用\"以获得更准确的数据\n");
+                
+                // 写入文件
+                try (java.io.FileWriter writer = new java.io.FileWriter(fileToSave)) {
+                    writer.write(reportContent.toString());
+                }
+                
+                JOptionPane.showMessageDialog(mainPanel, 
+                    "报告已成功导出到:\n" + fileToSave.getAbsolutePath(), 
+                    "导出成功", JOptionPane.INFORMATION_MESSAGE);
+            }
                 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(mainPanel, 
@@ -221,12 +301,28 @@ public class MetricsSettingsComponent {
         
         if (result == JOptionPane.YES_OPTION) {
             try {
-                // 这里实现清空数据的逻辑
-                // ProductivityMetrics.getInstance().clearAllData();
+                // 实现清空数据的逻辑
+                ProductivityMetrics metrics = ProductivityMetrics.getInstance();
                 
+                // 清空所有统计数据
+                metrics.clearAllData();
+                
+                // 同时清空AIUsageTracker的数据
+                ee.carlrobert.codegpt.metrics.AIUsageTracker aiTracker = 
+                    ee.carlrobert.codegpt.metrics.AIUsageTracker.getInstance();
+                if (aiTracker != null) {
+                    aiTracker.clearAllData();
+                }
+                
+                // 更新界面显示
                 updateStatistics();
+                
                 JOptionPane.showMessageDialog(mainPanel, 
-                    "所有提效度量数据已清空", 
+                    "所有提效度量数据已清空！\n" +
+                    "- 代码补全记录已清空\n" +
+                    "- 聊天代码生成记录已清空\n" +
+                    "- 时间节省记录已清空\n" +
+                    "- AI使用跟踪数据已清空", 
                     "操作完成", JOptionPane.INFORMATION_MESSAGE);
                     
             } catch (Exception e) {
@@ -272,5 +368,21 @@ public class MetricsSettingsComponent {
     
     public void setDetailedLoggingEnabled(boolean enabled) {
         detailedLoggingCheckBox.setSelected(enabled);
+    }
+    
+    public boolean isAutoDetectionEnabled() {
+        return autoDetectionCheckBox.isSelected();
+    }
+    
+    public void setAutoDetectionEnabled(boolean enabled) {
+        autoDetectionCheckBox.setSelected(enabled);
+    }
+    
+    public boolean isOnlyTrackAIUsage() {
+        return onlyTrackAIUsageCheckBox.isSelected();
+    }
+    
+    public void setOnlyTrackAIUsage(boolean enabled) {
+        onlyTrackAIUsageCheckBox.setSelected(enabled);
     }
 }

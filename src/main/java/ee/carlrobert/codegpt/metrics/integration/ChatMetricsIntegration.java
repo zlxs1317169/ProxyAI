@@ -54,8 +54,20 @@ public class ChatMetricsIntegration {
             if (generatedCode != null && !generatedCode.trim().isEmpty()) {
                 session.totalGeneratedCode += generatedCode;
                 session.codeGenerationCount++;
+                
+                // 立即记录代码生成度量
+                recordCodeGenerationMetrics(session, generatedCode);
+                
+                System.out.println("✅ 聊天代码生成已记录: " + countLines(generatedCode) + " 行代码");
             }
         }
+    }
+    
+    private static int countLines(String text) {
+        if (text == null || text.isEmpty()) {
+            return 0;
+        }
+        return text.split("\\r?\\n").length;
     }
     
     /**

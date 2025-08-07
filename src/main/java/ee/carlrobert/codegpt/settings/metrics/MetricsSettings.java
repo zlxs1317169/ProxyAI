@@ -71,6 +71,22 @@ public final class MetricsSettings implements PersistentStateComponent<MetricsSe
         state.notificationEnabled = enabled;
     }
     
+    public boolean isAutoDetectionEnabled() {
+        return state.autoDetectionEnabled;
+    }
+    
+    public void setAutoDetectionEnabled(boolean enabled) {
+        state.autoDetectionEnabled = enabled;
+    }
+    
+    public boolean isOnlyTrackAIUsage() {
+        return state.onlyTrackAIUsage;
+    }
+    
+    public void setOnlyTrackAIUsage(boolean enabled) {
+        state.onlyTrackAIUsage = enabled;
+    }
+    
     // 状态持久化
     @Override
     public @Nullable State getState() {
@@ -92,5 +108,8 @@ public final class MetricsSettings implements PersistentStateComponent<MetricsSe
         public boolean detailedLoggingEnabled = false;
         public String exportPath = "";
         public boolean notificationEnabled = true;
+        // 新增设置项
+        public boolean autoDetectionEnabled = false; // 默认禁用自动检测，避免误判
+        public boolean onlyTrackAIUsage = true; // 默认只跟踪真正的AI使用
     }
 }

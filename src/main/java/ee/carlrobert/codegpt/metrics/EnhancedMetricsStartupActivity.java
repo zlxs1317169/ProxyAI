@@ -92,14 +92,27 @@ public class EnhancedMetricsStartupActivity implements StartupActivity {
         try {
             System.out.println("📊 初始化数据收集器...");
             
-            // 直接初始化MetricsCollector
-            MetricsCollector collector = new MetricsCollector();
-            if (collector != null) {
-                // 启动数据收集活动
-                collector.runActivity(project);
-                System.out.println("✓ MetricsCollector 已启动");
+            MetricsSettings settings = MetricsSettings.getInstance();
+            
+            if (settings != null && settings.isOnlyTrackAIUsage()) {
+                System.out.println("✅ 启用精确跟踪模式 - 只跟踪真实AI使用");
+                // 初始化AIUsageTracker而不是MetricsCollector
+                AIUsageTracker tracker = AIUsageTracker.getInstance();
+                if (tracker != null) {
+                    System.out.println("✓ AIUsageTracker 已启动");
+                } else {
+                    System.err.println("❌ AIUsageTracker 创建失败");
+                }
             } else {
-                System.err.println("❌ MetricsCollector 创建失败");
+                System.out.println("⚠️ 启用传统收集模式 - 可能包含自动检测");
+                // 使用传统的MetricsCollector
+                MetricsCollector collector = new MetricsCollector();
+                if (collector != null) {
+                    collector.runActivity(project);
+                    System.out.println("✓ MetricsCollector 已启动");
+                } else {
+                    System.err.println("❌ MetricsCollector 创建失败");
+                }
             }
             
         } catch (Exception e) {

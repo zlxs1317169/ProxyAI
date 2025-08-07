@@ -11,6 +11,7 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import com.intellij.openapi.vfs.VirtualFile;
+import ee.carlrobert.codegpt.settings.metrics.MetricsSettings;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDateTime;
@@ -39,29 +40,39 @@ public class MetricsCollector implements StartupActivity {
     
     /**
      * 初始化指标收集
+     * 修改为只在启用自动检测时才监听文件编辑活动
      */
     private void initializeMetricsCollection(Project project) {
         try {
-            // 监听文件编辑活动
-            project.getMessageBus().connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, 
-                new FileEditorManagerListener() {
-                    @Override
-                    public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
-                        startEditingSession(file.getName(), getFileLanguage(file));
-                    }
-                    
-                    @Override
-                    public void fileClosed(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
-                        endEditingSession(file.getName());
-                    }
-                    
-                    @Override
-                    public void selectionChanged(@NotNull FileEditorManagerEvent event) {
-                        if (event.getNewFile() != null) {
-                            switchEditingSession(event.getOldFile(), event.getNewFile());
+            // 检查是否启用自动检测
+            MetricsSettings settings = MetricsSettings.getInstance();
+            
+            if (settings != null && settings.isAutoDetectionEnabled()) {
+                System.out.println("⚠️ 启用了自动检测模式 - 可能会误判普通编辑为AI使用");
+                
+                // 监听文件编辑活动
+                project.getMessageBus().connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, 
+                    new FileEditorManagerListener() {
+                        @Override
+                        public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
+                            startEditingSession(file.getName(), getFileLanguage(file));
                         }
-                    }
-                });
+                        
+                        @Override
+                        public void fileClosed(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
+                            endEditingSession(file.getName());
+                        }
+                        
+                        @Override
+                        public void selectionChanged(@NotNull FileEditorManagerEvent event) {
+                            if (event.getNewFile() != null) {
+                                switchEditingSession(event.getOldFile(), event.getNewFile());
+                            }
+                        }
+                    });
+            } else {
+                System.out.println("✅ 使用精确跟踪模式 - 只记录真实AI使用");
+            }
         } catch (Exception e) {
             System.err.println("初始化度量收集时发生错误: " + e.getMessage());
         }
