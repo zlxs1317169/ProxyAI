@@ -2,6 +2,8 @@ package ee.carlrobert.codegpt.completions;
 
 import com.intellij.openapi.project.Project;
 import ee.carlrobert.codegpt.codecompletions.CompletionProgressNotifier;
+import ee.carlrobert.codegpt.settings.service.FeatureType;
+import ee.carlrobert.codegpt.settings.service.ModelSelectionService;
 import ee.carlrobert.codegpt.metrics.SafeMetricsCollector;
 import ee.carlrobert.codegpt.settings.GeneralSettings;
 import ee.carlrobert.codegpt.telemetry.TelemetryAction;
@@ -26,7 +28,7 @@ public class ToolwindowChatCompletionRequestHandler {
       // 开始聊天会话指标收集
       String sessionId = callParameters.getConversation().getId().toString();
       SafeMetricsCollector.safeStartChatSession(sessionId, "chat_completion");
-      
+
       eventSource = startCall(callParameters);
     } catch (TotalUsageExceededException e) {
       completionResponseEventListener.handleTokensExceeded(
@@ -46,15 +48,19 @@ public class ToolwindowChatCompletionRequestHandler {
   private EventSource startCall(ChatCompletionParameters callParameters) {
     try {
       CompletionProgressNotifier.Companion.update(project, true);
+      var featureType = callParameters.getFeatureType();
+      var serviceType =
+          ModelSelectionService.getInstance().getServiceForFeature(FeatureType.CHAT);
       var request = CompletionRequestFactory
-          .getFactory(GeneralSettings.getSelectedService())
+          .getFactoryForFeature(featureType)
           .createChatRequest(callParameters);
       return CompletionRequestService.getInstance().getChatCompletionAsync(
           request,
           new ChatCompletionEventListener(
               project,
               callParameters,
-              completionResponseEventListener));
+              completionResponseEventListener),
+          serviceType);
     } catch (Throwable ex) {
       handleCallException(ex);
       throw ex;
@@ -72,9 +78,11 @@ public class ToolwindowChatCompletionRequestHandler {
   }
 
   private void sendInfo(ChatCompletionParameters callParameters) {
+    var service = ModelSelectionService.getInstance()
+        .getServiceForFeature(FeatureType.CHAT);
     TelemetryAction.COMPLETION.createActionMessage()
         .property("conversationId", callParameters.getConversation().getId().toString())
-        .property("service", GeneralSettings.getSelectedService().getCode().toLowerCase())
+        .property("service", service.getCode().toLowerCase())
         .send();
   }
 }

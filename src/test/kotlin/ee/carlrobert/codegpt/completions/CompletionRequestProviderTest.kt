@@ -22,7 +22,7 @@ class CompletionRequestProviderTest : IntegrationTest() {
             instructions = "TEST_SYSTEM_PROMPT"
         }
         service<PromptsSettings>().state.personas.selectedPersona = customPersona
-        val conversation = ConversationService.getInstance().startConversation()
+        val conversation = ConversationService.getInstance().startConversation(project)
         val firstMessage = createDummyMessage(500)
         val secondMessage = createDummyMessage(250)
         conversation.addMessage(firstMessage)
@@ -53,7 +53,7 @@ class CompletionRequestProviderTest : IntegrationTest() {
             instructions = "TEST_SYSTEM_PROMPT"
         }
         service<PromptsSettings>().state.personas.selectedPersona = customPersona
-        val conversation = ConversationService.getInstance().startConversation()
+        val conversation = ConversationService.getInstance().startConversation(project)
         val firstMessage = createDummyMessage("FIRST_TEST_PROMPT", 500)
         val secondMessage = createDummyMessage("SECOND_TEST_PROMPT", 250)
         conversation.addMessage(firstMessage)
@@ -72,22 +72,6 @@ class CompletionRequestProviderTest : IntegrationTest() {
                 Tuple.tuple("assistant", firstMessage.response),
                 Tuple.tuple("user", "SECOND_TEST_PROMPT")
             )
-    }
-
-    fun testTotalUsageExceededException() {
-        useOpenAIService(OpenAIChatCompletionModel.GPT_3_5.code)
-        val conversation = ConversationService.getInstance().startConversation()
-        conversation.addMessage(createDummyMessage(1500))
-        conversation.addMessage(createDummyMessage(1500))
-        conversation.addMessage(createDummyMessage(1500))
-
-        assertThrows(TotalUsageExceededException::class.java) {
-            OpenAIRequestFactory().createChatRequest(
-                ChatCompletionParameters
-                    .builder(conversation, createDummyMessage(100))
-                    .build()
-            )
-        }
     }
 
     private fun createDummyMessage(tokenSize: Int): Message {

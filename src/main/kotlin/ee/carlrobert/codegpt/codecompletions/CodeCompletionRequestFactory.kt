@@ -7,6 +7,8 @@ import ee.carlrobert.codegpt.completions.llama.LlamaModel
 import ee.carlrobert.codegpt.credentials.CredentialsStore.CredentialKey
 import ee.carlrobert.codegpt.credentials.CredentialsStore.getCredential
 import ee.carlrobert.codegpt.settings.Placeholder.*
+import ee.carlrobert.codegpt.settings.service.FeatureType
+import ee.carlrobert.codegpt.settings.service.ModelSelectionService
 import ee.carlrobert.codegpt.settings.service.custom.CustomServicesSettings
 import ee.carlrobert.codegpt.settings.service.llama.LlamaSettings
 import ee.carlrobert.codegpt.settings.service.llama.LlamaSettingsState
@@ -38,6 +40,9 @@ object CodeCompletionRequestFactory {
     @JvmStatic
     fun buildOpenAIRequest(details: InfillRequest): OpenAITextCompletionRequest {
         return OpenAITextCompletionRequest.Builder(details.prefix)
+            .setModel(
+                ModelSelectionService.getInstance().getModelForFeature(FeatureType.CODE_COMPLETION)
+            )
             .setSuffix(details.suffix)
             .setStream(true)
             .setMaxTokens(MAX_TOKENS)
@@ -116,6 +121,7 @@ object CodeCompletionRequestFactory {
 
     fun buildOllamaRequest(details: InfillRequest): OllamaCompletionRequest {
         val settings = service<OllamaSettings>().state
+        val model = service<ModelSelectionService>().getModelForFeature(FeatureType.CODE_COMPLETION)
         val stopTokens = buildList {
             if (details.stopTokens.isNotEmpty()) addAll(details.stopTokens)
         }.toMutableList()
@@ -127,7 +133,7 @@ object CodeCompletionRequestFactory {
         }
 
         return OllamaCompletionRequest.Builder(
-            settings.codeCompletionModel,
+            model,
             prompt
         )
             .setSuffix(if (settings.fimOverride) null else details.suffix)
