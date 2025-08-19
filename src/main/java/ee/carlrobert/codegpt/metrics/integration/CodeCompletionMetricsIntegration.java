@@ -1,124 +1,212 @@
 package ee.carlrobert.codegpt.metrics.integration;
 
-import ee.carlrobert.codegpt.metrics.MetricsIntegration;
-import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.project.Project;
+import ee.carlrobert.codegpt.metrics.ProductivityMetrics;
+import ee.carlrobert.codegpt.metrics.SafeMetricsCollector;
+import ee.carlrobert.llm.client.openai.completion.ErrorDetails;
 
 /**
- * 代码补全提效度量集成
- * 提供简单易用的API来集成提效度量到现有的代码补全功能中
+ * 代码补全功能的指标集成，用于收集与代码补全相关的效能度量指标
  */
 public class CodeCompletionMetricsIntegration {
-
-    // 定义常量以提高可读性和可维护性
-    private static final long SECONDS_PER_LINE_MANUAL_EDIT = 30L; // 假设每行手动编辑需要30秒
-    private static final long MILLIS_PER_SECOND = 1000L; // 毫秒转换因子
-    private static final int EDIT_DISTANCE_WEIGHT_FACTOR = 50; // 编辑距离的权重因子
-
+    private static final Logger LOG = Logger.getInstance(CodeCompletionMetricsIntegration.class);
+    private static final String ACTION_TYPE = "CODE_COMPLETION";
+    
+    private CodeCompletionMetricsIntegration() {
+        // 工具类，不允许实例化
+    }
+    
     /**
-     * 记录代码补全度量数据
-     * 在代码补全提供者中调用此方法来收集度量数据
-     *
-     * @param editor 编辑器实例
-     * @param completionText 补全的代码文本
-     * @param wasAccepted 是否被用户接受
-     * @param responseTimeMs 响应时间（毫秒）
+     * 记录代码补全请求开始
      */
-    public static void recordCodeCompletionMetrics(Editor editor, String completionText,
-                                                 boolean wasAccepted, long responseTimeMs) {
-        try {
-            // 获取文件语言
-            String language = getLanguageFromEditor(editor);
-
-            // 记录度量数据
-            MetricsIntegration metricsIntegration = MetricsIntegration.getInstance();
-            if (metricsIntegration != null && metricsIntegration.isInitialized()) {
-                metricsIntegration.recordAICompletion(language, completionText, wasAccepted, responseTimeMs);
-            }
-
-        } catch (Exception e) {
-            // 度量收集不应影响正常功能，只记录错误日志
-            System.err.println("记录代码补全度量时发生错误: " + e.getMessage());
+    public static ProductivityMetrics recordCompletionStart(
+            Project project, 
+            String filePath, 
+            int offset, 
+            String prefix) {
+        
+        ProductivityMetrics metrics = SafeMetricsCollector.safelyStartMetrics(
+                project,
+                "code_completion_" + filePath.hashCode() + "_" + offset,
+                ACTION_TYPE
+        );
+        
+        if (metrics != null) {
+            metrics.addAdditionalData("filePath", filePath);
+            metrics.addAdditionalData("offset", offset);
+            metrics.addAdditionalData("prefix", prefix);
+        }
+        
+        return metrics;
+    }
+    
+    /**
+     * 记录代码补全请求完成
+     */
+    public static void recordCompletionComplete(
+            Project project,
+            ProductivityMetrics metrics,
+            String suggestion,
+            int tokenCount,
+            boolean accepted) {
+        
+        if (metrics != null) {
+                            metrics.setTotalTokenCount(tokenCount);
+            metrics.addAdditionalData("suggestionLength", suggestion.length());
+            metrics.addAdditionalData("accepted", accepted);
+            SafeMetricsCollector.safelyCompleteMetrics(project, metrics, true);
         }
     }
-
+    
     /**
-     * 记录内联补全度量
-     *
-     * @param language 编程语言
-     * @param suggestion 建议的代码
-     * @param accepted 是否被接受
-     * @param processingTime 处理时间
+     * 记录代码补全请求错误
      */
-    public static void recordInlineCompletionMetrics(String language, String suggestion,
-                                                   boolean accepted, long processingTime) {
-        try {
-            MetricsIntegration metricsIntegration = MetricsIntegration.getInstance();
-            if (metricsIntegration != null && metricsIntegration.isInitialized()) {
-                metricsIntegration.recordAICompletion(language, suggestion, accepted, processingTime);
-            }
-        } catch (Exception e) {
-            System.err.println("记录内联补全度量时发生错误: " + e.getMessage());
+    public static void recordCompletionError(
+            Project project,
+            ProductivityMetrics metrics,
+            ErrorDetails error) {
+        
+        if (metrics != null) {
+            String errorMessage = error != null ? error.getMessage() : "Unknown error";
+            SafeMetricsCollector.safelyCompleteMetrics(project, metrics, false, errorMessage);
         }
     }
-
+    
     /**
-     * 记录多行编辑建议度量
-     *
-     * @param language 编程语言
-     * @param originalCode 原始代码
-     * @param suggestedCode 建议的代码
-     * @param applied 是否被应用
-     * @param processingTime 处理时间
+     * 记录代码补全接受事件
      */
-    public static void recordMultiLineEditMetrics(String language, String originalCode,
-                                                String suggestedCode, boolean applied,
-                                                long processingTime) {
-        try {
-            MetricsIntegration metricsIntegration = MetricsIntegration.getInstance();
-            if (metricsIntegration != null && metricsIntegration.isInitialized()) {
-                // 计算建议的代码行数
-                int suggestedLines = (int) suggestedCode.lines().count(); // 使用 lines().count() 更健壮
-
-                // 记录代码补全度量
-                metricsIntegration.recordAICompletion(language, suggestedCode, applied, processingTime);
-
-                // 如果应用了建议，记录时间节省
-                if (applied && metricsIntegration.getMetricsCollector() != null) {
-                    long estimatedManualTime = estimateManualEditTime(originalCode, suggestedCode);
-                    metricsIntegration.getMetricsCollector().recordTimeSaving(
-                        "multi_line_edit", estimatedManualTime, processingTime, suggestedLines
-                    );
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("记录多行编辑度量时发生错误: " + e.getMessage());
+    public static void recordCompletionAccepted(
+            Project project,
+            String filePath,
+            String acceptedText,
+            String completionType) {
+        
+        ProductivityMetrics metrics = SafeMetricsCollector.safelyStartMetrics(
+                project,
+                "completion_accepted",
+                ACTION_TYPE
+        );
+        
+        if (metrics != null) {
+            metrics.addAdditionalData("filePath", filePath);
+            metrics.addAdditionalData("acceptedTextLength", acceptedText.length());
+            metrics.addAdditionalData("completionType", completionType);
+            SafeMetricsCollector.safelyCompleteMetrics(project, metrics, true);
         }
     }
-
-    private static String getLanguageFromEditor(Editor editor) {
+    
+    /**
+     * 记录代码补全拒绝事件
+     */
+    public static void recordCompletionRejected(
+            Project project,
+            String filePath,
+            String rejectedText) {
+        
+        ProductivityMetrics metrics = SafeMetricsCollector.safelyStartMetrics(
+                project,
+                "completion_rejected",
+                ACTION_TYPE
+        );
+        
+        if (metrics != null) {
+            metrics.addAdditionalData("filePath", filePath);
+            metrics.addAdditionalData("rejectedTextLength", rejectedText.length());
+            SafeMetricsCollector.safelyCompleteMetrics(project, metrics, true);
+        }
+    }
+    
+    /**
+     * 记录代码补全指标（用于 Kotlin 集成）
+     */
+    public static void recordCodeCompletionMetrics(
+            com.intellij.openapi.editor.Editor editor,
+            String text,
+            boolean accepted,
+            long processingTime) {
+        
         try {
-            VirtualFile file = FileDocumentManager.getInstance().getFile(editor.getDocument());
+            Project project = editor.getProject();
+            if (project == null) {
+                return;
+            }
+            
+            String filePath = editor.getVirtualFile() != null ? 
+                editor.getVirtualFile().getPath() : "unknown";
+            
+            ProductivityMetrics metrics = SafeMetricsCollector.safelyStartMetrics(
+                    project,
+                    "code_completion_" + System.currentTimeMillis(),
+                    ACTION_TYPE
+            );
+            
+            if (metrics != null) {
+                metrics.setProcessingTime(processingTime);
+                metrics.setLinesGenerated(text.split("\n").length);
+                metrics.setLinesAccepted(accepted ? text.split("\n").length : 0);
+                metrics.setAcceptanceRate(accepted ? 100.0 : 0.0);
+                metrics.setProgrammingLanguage(detectLanguageFromEditor(editor));
+                metrics.setFileExtension(getFileExtension(editor));
+                metrics.setContextSize(String.valueOf(editor.getDocument().getTextLength()));
+                
+                SafeMetricsCollector.safelyCompleteMetrics(project, metrics, true);
+            }
+            
+        } catch (Exception e) {
+            LOG.warn("Failed to record code completion metrics", e);
+        }
+    }
+    
+    /**
+     * 从编辑器检测编程语言
+     */
+    private static String detectLanguageFromEditor(com.intellij.openapi.editor.Editor editor) {
+        try {
+            com.intellij.openapi.vfs.VirtualFile file = editor.getVirtualFile();
             if (file != null) {
                 String extension = file.getExtension();
                 return mapExtensionToLanguage(extension);
             }
         } catch (Exception e) {
-            // 忽略错误，返回默认值
+            LOG.warn("Failed to detect language from editor", e);
         }
         return "unknown";
     }
-
+    
+    /**
+     * 获取文件扩展名
+     */
+    private static String getFileExtension(com.intellij.openapi.editor.Editor editor) {
+        try {
+            com.intellij.openapi.vfs.VirtualFile file = editor.getVirtualFile();
+            if (file != null) {
+                return file.getExtension();
+            }
+        } catch (Exception e) {
+            LOG.warn("Failed to get file extension", e);
+        }
+        return "unknown";
+    }
+    
+    /**
+     * 将文件扩展名映射到编程语言
+     */
     private static String mapExtensionToLanguage(String extension) {
-        if (extension == null) return "unknown";
-
+        if (extension == null) {
+            return "unknown";
+        }
+        
         switch (extension.toLowerCase()) {
             case "java": return "java";
             case "kt": return "kotlin";
             case "py": return "python";
-            case "js": case "ts": return "javascript";
-            case "cpp": case "cc": case "cxx": return "cpp";
+            case "js":
+            case "ts": return "javascript";
+            case "cpp":
+            case "cc":
+            case "cxx": return "cpp";
             case "c": return "c";
             case "go": return "go";
             case "rs": return "rust";
@@ -127,31 +215,5 @@ public class CodeCompletionMetricsIntegration {
             case "swift": return "swift";
             default: return extension;
         }
-    }
-
-    private static long estimateManualEditTime(String originalCode, String suggestedCode) {
-        // 简单的时间估算逻辑
-        // 步骤 2: 优化行数计算
-        long originalLines = countLines(originalCode);
-        long suggestedLines = countLines(suggestedCode);
-
-        // 步骤 3: 改进编辑距离权重
-        long changedLines = Math.abs(suggestedLines - originalLines) +
-                          calculateEditDistance(originalCode, suggestedCode) / EDIT_DISTANCE_WEIGHT_FACTOR;
-
-        // 步骤 1: 引入常量
-        return changedLines * SECONDS_PER_LINE_MANUAL_EDIT * MILLIS_PER_SECOND; // 转换为毫秒
-    }
-    
-    private static long countLines(String text) {
-        if (text == null || text.isEmpty()) {
-            return 0;
-        }
-        return text.split("\\r?\\n").length;
-    }
-
-    private static int calculateEditDistance(String s1, String s2) {
-        // 简化的编辑距离计算
-        return Math.abs(s1.length() - s2.length());
     }
 }

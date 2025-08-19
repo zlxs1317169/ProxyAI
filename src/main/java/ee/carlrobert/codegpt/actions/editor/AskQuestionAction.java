@@ -13,6 +13,7 @@ import ee.carlrobert.codegpt.completions.CompletionRequestUtil;
 import ee.carlrobert.codegpt.conversations.message.Message;
 import ee.carlrobert.codegpt.toolwindow.chat.ChatToolWindowContentManager;
 import ee.carlrobert.codegpt.ui.UIUtil;
+import ee.carlrobert.codegpt.metrics.SafeMetricsCollector;
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.JComponent;
@@ -37,8 +38,22 @@ public class AskQuestionAction extends BaseEditorAction {
         var formattedCode =
             CompletionRequestUtil.formatCode(selectedText, editor.getVirtualFile().getPath());
         var message = new Message(format("%s\n\n%s", previousUserPrompt, formattedCode));
-        SwingUtilities.invokeLater(() ->
-            project.getService(ChatToolWindowContentManager.class).sendMessage(message));
+        SwingUtilities.invokeLater(() -> {
+            // 开始聊天会话并记录指标
+            String sessionId = java.util.UUID.randomUUID().toString();
+            // ProductivityMetrics metrics = SafeMetricsCollector.safeStartChatSession(sessionId, "code_question");
+            // if (metrics != null) {
+            //     metrics.addAdditionalData("selected_text_length", selectedText.length());
+            //     metrics.addAdditionalData("file_path", editor.getVirtualFile().getPath());
+            //     metrics.addAdditionalData("file_type", editor.getVirtualFile().getFileType().getName());
+            //     metrics.addAdditionalData("prompt_length", previousUserPrompt.length());
+            //     
+            //     // 将指标对象存储到项目服务中，以便在响应时完成指标收集
+            //     // MetricsCollector.getInstance(project).storeActiveMetrics(sessionId, metrics);
+            // }
+            
+            project.getService(ChatToolWindowContentManager.class).sendMessage(message);
+        });
       }
     }
   }

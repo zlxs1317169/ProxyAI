@@ -140,11 +140,11 @@ public class TestDataGenerator extends AnAction {
             String dateStr = pastDate.format(DateTimeFormatter.ISO_LOCAL_DATE);
             
             // 手动更新每日统计
-            ProductivityMetrics.DailyProductivityStats stats = new ProductivityMetrics.DailyProductivityStats();
+            ProductivityMetrics.DailyProductivityStats stats = new ProductivityMetrics.DailyProductivityStats("test_date");
             stats.codeCompletionsCount = 5 + random.nextInt(15);
             stats.chatSessionsCount = 2 + random.nextInt(5);
             stats.timeSavedMs = (1800000 + random.nextInt(5400000)); // 30-180分钟
-            stats.linesGenerated = 50 + random.nextInt(200);
+                                    stats.totalLinesGenerated = 50 + random.nextInt(200);
             stats.avgResponseTime = 100 + random.nextDouble() * 150;
             
             // 反射设置日期

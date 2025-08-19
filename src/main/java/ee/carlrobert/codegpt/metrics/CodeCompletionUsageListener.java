@@ -1,182 +1,162 @@
 package ee.carlrobert.codegpt.metrics;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.editor.event.DocumentEvent;
-import com.intellij.openapi.editor.event.DocumentListener;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.vfs.VirtualFile;
-import ee.carlrobert.codegpt.settings.metrics.MetricsSettings;
-import org.jetbrains.annotations.NotNull;
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.project.Project;
+import ee.carlrobert.codegpt.codecompletions.CodeCompletionService;
+import ee.carlrobert.codegpt.metrics.integration.CodeCompletionMetricsIntegration;
+import ee.carlrobert.llm.client.openai.completion.ErrorDetails;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 代码补全使用监听器
- * 监听用户的编辑行为，识别可能的代码补全使用情况
+ * 代码补全使用情况监听器，用于收集代码补全相关的指标
  */
-public class CodeCompletionUsageListener implements DocumentListener {
-
+public class CodeCompletionUsageListener {
     private static final Logger LOG = Logger.getInstance(CodeCompletionUsageListener.class);
+    private static final Map<String, ProductivityMetrics> activeCompletionMetrics = new ConcurrentHashMap<>();
     
-    // 存储最近的文档变更，用于检测代码补全的使用
-    private final ConcurrentHashMap<Document, DocumentChangeInfo> recentChanges = new ConcurrentHashMap<>();
+    private CodeCompletionUsageListener() {
+        // 工具类，不允许实例化
+    }
     
-    // 检测阈值
-    private static final int MIN_INSERTION_LENGTH = 10;
-    private static final int MIN_LINES_FOR_COMPLETION = 2;
-
-    @Override
-    public void documentChanged(@NotNull DocumentEvent event) {
+    /**
+     * 记录代码补全请求开始
+     */
+    public static void recordCompletionRequest(
+            Project project,
+            Editor editor,
+            String prefix,
+            int offset) {
+        
+        if (project == null || editor == null) {
+            return;
+        }
+        
         try {
-            // 检查是否启用了自动检测
-            MetricsSettings settings = MetricsSettings.getInstance();
-            if (settings == null || !settings.isMetricsEnabled() || !settings.isAutoDetectionEnabled()) {
-                return;
-            }
+            Document document = editor.getDocument();
+            String filePath = editor.getVirtualFile() != null 
+                    ? editor.getVirtualFile().getPath() 
+                    : "unknown";
             
-            // 如果启用了"仅跟踪真实AI使用"模式，则不进行自动检测
-            if (settings.isOnlyTrackAIUsage()) {
-                return;
-            }
-
-            Document document = event.getDocument();
-            
-            // 只处理插入事件
-            if (event.getNewLength() <= event.getOldLength()) {
-                return;
-            }
-
-            String insertedText = event.getNewFragment().toString();
-            
-            // 创建变更信息
-            DocumentChangeInfo changeInfo = new DocumentChangeInfo(
-                document,
-                insertedText,
-                System.currentTimeMillis(),
-                getFileName(document),
-                getLanguage(document)
+            ProductivityMetrics metrics = CodeCompletionMetricsIntegration.recordCompletionStart(
+                    project, 
+                    filePath, 
+                    offset, 
+                    prefix
             );
-
-            // 存储变更信息
-            recentChanges.put(document, changeInfo);
-
-            // 检测是否可能是代码补全
-            if (isPossibleCodeCompletion(changeInfo)) {
-                recordPossibleCodeCompletion(changeInfo);
-            }
-
-        } catch (Exception e) {
-            LOG.warn("处理文档变更事件时发生错误", e);
-        }
-    }
-
-    private boolean isPossibleCodeCompletion(DocumentChangeInfo changeInfo) {
-        try {
-            String text = changeInfo.newFragment;
             
-            if (text.length() < MIN_INSERTION_LENGTH) {
-                return false;
-            }
-
-            if (!containsCodePatterns(text)) {
-                return false;
-            }
-
-            if (text.split("\n").length < MIN_LINES_FOR_COMPLETION) {
-                return false;
-            }
-
-            return true;
-            
-        } catch (Exception e) {
-            LOG.warn("判断代码补全时发生错误", e);
-            return false;
-        }
-    }
-
-    private boolean containsCodePatterns(String text) {
-        return text.contains("{") || text.contains("}") || 
-               text.contains("(") || text.contains(")") ||
-               text.contains(";") || text.contains("=") ||
-               text.matches(".*\\b(if|for|while|class|function|def|public|private)\\b.*");
-    }
-
-    private void recordPossibleCodeCompletion(DocumentChangeInfo changeInfo) {
-        ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            try {
-                LOG.info("检测到可能的代码补全使用: 文件=" + changeInfo.fileName + 
-                        ", 语言=" + changeInfo.language + 
-                        ", 文本长度=" + changeInfo.newFragment.length());
-                
-                recordCodeCompletionMetrics(changeInfo);
-                
-            } catch (Exception e) {
-                LOG.warn("记录代码补全使用时发生错误", e);
-            }
-        });
-    }
-
-    private void recordCodeCompletionMetrics(DocumentChangeInfo changeInfo) {
-        try {
-            ProductivityMetrics metrics = ProductivityMetrics.getInstance();
             if (metrics != null) {
-                int linesGenerated = changeInfo.newFragment.split("\n").length;
-                int acceptedLines = linesGenerated;
-                long processingTime = 50L;
-                
-                metrics.recordCodeCompletion(changeInfo.language, linesGenerated, acceptedLines, processingTime);
+                String requestId = generateRequestId(filePath, offset);
+                activeCompletionMetrics.put(requestId, metrics);
             }
         } catch (Exception e) {
-            LOG.warn("记录代码补全指标时发生错误", e);
+            LOG.warn("记录代码补全请求失败", e);
         }
     }
-
-    private String getFileName(Document document) {
-        try {
-            VirtualFile file = FileDocumentManager.getInstance().getFile(document);
-            return file != null ? file.getName() : "unknown";
-        } catch (Exception e) {
-            return "unknown";
+    
+    /**
+     * 记录代码补全请求完成
+     */
+    public static void recordCompletionResponse(
+            Project project,
+            Editor editor,
+            int offset,
+            String suggestion,
+            int tokenCount) {
+        
+        if (project == null || editor == null) {
+            return;
         }
-    }
-
-    private String getLanguage(Document document) {
+        
         try {
-            VirtualFile file = FileDocumentManager.getInstance().getFile(document);
-            if (file != null) {
-                String extension = file.getExtension();
-                if (extension != null) {
-                    switch (extension.toLowerCase()) {
-                        case "java": return "java";
-                        case "py": return "python";
-                        case "js": return "javascript";
-                        case "ts": return "typescript";
-                        case "kt": return "kotlin";
-                        default: return extension;
-                    }
-                }
+            String filePath = editor.getVirtualFile() != null 
+                    ? editor.getVirtualFile().getPath() 
+                    : "unknown";
+            
+            String requestId = generateRequestId(filePath, offset);
+            ProductivityMetrics metrics = activeCompletionMetrics.remove(requestId);
+            
+            if (metrics != null) {
+                CodeCompletionMetricsIntegration.recordCompletionComplete(
+                        project, 
+                        metrics, 
+                        suggestion, 
+                        tokenCount, 
+                        false
+                );
             }
-            return "unknown";
         } catch (Exception e) {
-            return "unknown";
+            LOG.warn("记录代码补全响应失败", e);
         }
     }
-
-    private static class DocumentChangeInfo {
-        public final Document document;
-        public final String newFragment;
-        public final long timestamp;
-        public final String fileName;
-        public final String language;
-
-        public DocumentChangeInfo(Document document, String newFragment, long timestamp, String fileName, String language) {
-            this.document = document;
-            this.newFragment = newFragment;
-            this.timestamp = timestamp;
-            this.fileName = fileName;
-            this.language = language;
+    
+    /**
+     * 记录代码补全请求错误
+     */
+    public static void recordCompletionError(
+            Project project,
+            Editor editor,
+            int offset,
+            ErrorDetails error) {
+        
+        if (project == null || editor == null) {
+            return;
         }
+        
+        try {
+            String filePath = editor.getVirtualFile() != null 
+                    ? editor.getVirtualFile().getPath() 
+                    : "unknown";
+            
+            String requestId = generateRequestId(filePath, offset);
+            ProductivityMetrics metrics = activeCompletionMetrics.remove(requestId);
+            
+            if (metrics != null) {
+                CodeCompletionMetricsIntegration.recordCompletionError(
+                        project, 
+                        metrics, 
+                        error
+                );
+            }
+        } catch (Exception e) {
+            LOG.warn("记录代码补全错误失败", e);
+        }
+    }
+    
+    /**
+     * 记录代码补全接受事件
+     */
+    public static void recordCompletionAccepted(
+            Project project,
+            Editor editor,
+            String acceptedText,
+            String completionType) {
+        
+        if (project == null || editor == null) {
+            return;
+        }
+        
+        try {
+            String filePath = editor.getVirtualFile() != null 
+                    ? editor.getVirtualFile().getPath() 
+                    : "unknown";
+            
+            CodeCompletionMetricsIntegration.recordCompletionAccepted(
+                    project, 
+                    filePath, 
+                    acceptedText, 
+                    completionType
+            );
+        } catch (Exception e) {
+            LOG.warn("记录代码补全接受事件失败", e);
+        }
+    }
+    
+    private static String generateRequestId(String filePath, int offset) {
+        return filePath + "_" + offset;
     }
 }

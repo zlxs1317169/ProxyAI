@@ -43,41 +43,96 @@ public class BubbleSort {
         }
     }
 
+    /**
+     * 实现快速排序算法。
+     * 快速排序是一种高效的、分治法的排序算法。它选择一个基准元素，将数组分成两个子数组，
+     * 然后对这两个子数组进行递归排序。
+     *
+     * @param arr 待排序的整数数组。
+     */
+    public static void quickSort(int[] arr) {
+        if (arr == null || arr.length <= 1) {
+            return; // 如果数组为空或只有一个元素，无需排序
+        }
+        quickSortHelper(arr, 0, arr.length - 1);
+    }
+
+    private static void quickSortHelper(int[] arr, int low, int high) {
+        if (low < high) {
+            // pi 是分区索引，arr[pi] 已经排好序
+            int pi = partition(arr, low, high);
+
+            // 递归地对 pi 左侧和右侧的子数组进行排序
+            quickSortHelper(arr, low, pi - 1);
+            quickSortHelper(arr, pi + 1, high);
+        }
+    }
+
+    private static int partition(int[] arr, int low, int high) {
+        // 选择最后一个元素作为基准点
+        int pivot = arr[high];
+        int i = (low - 1); // 较小元素的索引
+
+        for (int j = low; j < high; j++) {
+            if (arr[j] < pivot) {
+                i++;
+                // 交换 arr[i] 和 arr[j]
+                int temp = arr[i];
+                arr[i] = arr[j];
+                arr[j] = temp;
+            }
+        }
+
+        // 将基准点放到正确的位置
+        int temp = arr[i + 1];
+        arr[i + 1] = arr[high];
+        arr[high] = temp;
+
+        return i + 1;
+    }
+
     public static void main(String[] args) {
         int[] arr1 = {30, 5, 18, 2, 45, 10};
         System.out.print("Original array 1: ");
         printArray(arr1);
         bubbleSort(arr1);
-        System.out.print("Sorted array 1: ");
+        System.out.print("Sorted array 1 (bubble sort): ");
         printArray(arr1);
 
         int[] arr2 = {5, 1, 4, 2, 8};
         System.out.print("Original array 2: ");
         printArray(arr2);
         bubbleSort(arr2);
-        System.out.print("Sorted array 2: ");
+        System.out.print("Sorted array 2 (bubble sort): ");
         printArray(arr2);
 
         int[] arr3 = {1, 2, 3, 4, 5}; // 已经有序的数组
         System.out.print("Original array 3: ");
         printArray(arr3);
         bubbleSort(arr3);
-        System.out.print("Sorted array 3: ");
+        System.out.print("Sorted array 3 (bubble sort): ");
         printArray(arr3);
 
         int[] arr4 = {}; // 空数组
         System.out.print("Original array 4: ");
         printArray(arr4);
         bubbleSort(arr4);
-        System.out.print("Sorted array 4: ");
+        System.out.print("Sorted array 4 (bubble sort): ");
         printArray(arr4);
 
         int[] arr5 = {7}; // 单元素数组
         System.out.print("Original array 5: ");
         printArray(arr5);
         bubbleSort(arr5);
-        System.out.print("Sorted array 5: ");
+        System.out.print("Sorted array 5 (bubble sort): ");
         printArray(arr5);
+
+        int[] arr6 = {30, 5, 18, 2, 45, 10};
+        System.out.print("Original array 6: ");
+        printArray(arr6);
+        quickSort(arr6);
+        System.out.print("Sorted array 6 (quick sort): ");
+        printArray(arr6);
     }
 
     /**

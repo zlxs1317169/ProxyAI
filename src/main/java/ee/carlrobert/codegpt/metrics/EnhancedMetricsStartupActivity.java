@@ -3,6 +3,7 @@ package ee.carlrobert.codegpt.metrics;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import ee.carlrobert.codegpt.settings.metrics.MetricsSettings;
+import ee.carlrobert.codegpt.metrics.web.MetricsWebServer;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDateTime;
@@ -35,7 +36,10 @@ public class EnhancedMetricsStartupActivity implements StartupActivity {
             // 4. 初始化验证器
             initializeValidator();
             
-            // 5. 运行初始验证
+            // 5. 初始化Web服务器
+            initializeWebServer(project);
+            
+            // 6. 运行初始验证
             runInitialValidation();
             
             System.out.println("✅ ProxyAI 数据收集系统启动完成");
@@ -106,7 +110,7 @@ public class EnhancedMetricsStartupActivity implements StartupActivity {
             } else {
                 System.out.println("⚠️ 启用传统收集模式 - 可能包含自动检测");
                 // 使用传统的MetricsCollector
-                MetricsCollector collector = new MetricsCollector();
+                MetricsCollector collector = new MetricsCollector(project);
                 if (collector != null) {
                     collector.runActivity(project);
                     System.out.println("✓ MetricsCollector 已启动");
@@ -134,6 +138,48 @@ public class EnhancedMetricsStartupActivity implements StartupActivity {
             
         } catch (Exception e) {
             System.err.println("初始化验证器时发生错误: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 初始化Web服务器
+     */
+    private void initializeWebServer(Project project) {
+        try {
+            System.out.println("🌐 初始化Web服务器...");
+            
+            // 检查设置是否启用Web服务器
+            MetricsSettings settings = MetricsSettings.getInstance();
+            if (settings != null && !settings.isWebServerEnabled()) {
+                System.out.println("⚠️ Web服务器已禁用，跳过初始化");
+                return;
+            }
+            
+            // 获取Web服务器实例
+            MetricsWebServer webServer = MetricsWebServer.getInstance(project);
+            if (webServer != null) {
+                // 设置端口（从设置中读取或使用默认值）
+                int port = settings != null ? settings.getWebServerPort() : 8090;
+                webServer.setPort(port);
+                
+                // 启动Web服务器
+                webServer.start();
+                
+                if (webServer.isRunning()) {
+                    System.out.println("✅ Web服务器启动成功，端口: " + port);
+                    System.out.println("🌐 访问地址: " + webServer.getWebUrl());
+                    System.out.println("📊 指标数据API: " + webServer.getWebUrl() + "/api/metrics");
+                    System.out.println("📈 数据摘要: " + webServer.getWebUrl() + "/api/metrics/summary");
+                } else {
+                    System.err.println("❌ Web服务器启动失败");
+                }
+            } else {
+                System.err.println("❌ 无法获取Web服务器实例");
+            }
+            
+        } catch (Exception e) {
+            System.err.println("初始化Web服务器时发生错误: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     

@@ -57,6 +57,8 @@ class EditCodeSubmissionHandler(
         }
     }
 
+
+
     private fun revertAllChanges(prevSource: String) {
         runWriteCommandAction(editor.project) {
             editor.document.replaceString(

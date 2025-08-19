@@ -34,7 +34,7 @@ public final class MetricsIntegration implements StartupActivity {
     private void initializeMetricsSystem(Project project) {
         try {
             // 初始化数据收集器
-            metricsCollector = new MetricsCollector();
+            metricsCollector = new MetricsCollector(project);
             metricsCollector.runActivity(project);
             
             // 初始化度量服务

@@ -123,7 +123,7 @@ public class RunTestDataGenerator {
             stats.codeCompletionsCount = 5 + random.nextInt(15);
             stats.chatSessionsCount = 2 + random.nextInt(5);
             stats.timeSavedMs = (1800000 + random.nextInt(5400000)); // 30-180分钟
-            stats.linesGenerated = 50 + random.nextInt(200);
+                                        stats.totalLinesGenerated = 50 + random.nextInt(200);
             stats.avgResponseTime = 100 + random.nextDouble() * 150;
             
             // 尝试通过反射设置日期数据

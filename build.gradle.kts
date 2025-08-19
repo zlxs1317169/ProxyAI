@@ -80,6 +80,7 @@ dependencies {
         // vulnerable transitive dependency
         exclude(group = "org.jsoup", module = "jsoup")
     }
+    implementation(libs.h2)
     implementation(kotlin("stdlib"))
     implementation(kotlin("reflect"))
     implementation(libs.jsoup)
@@ -88,6 +89,7 @@ dependencies {
     implementation(libs.grpc.protobuf)
     implementation(libs.grpc.stub)
     implementation(libs.grpc.netty.shaded)
+    implementation(libs.javalin)
     testImplementation("junit:junit:4.13.2")
     testImplementation(kotlin("test"))
 }

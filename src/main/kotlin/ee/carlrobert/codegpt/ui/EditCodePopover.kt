@@ -3,6 +3,7 @@ package ee.carlrobert.codegpt.ui
 import com.intellij.ide.IdeBundle
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.SelectionEvent
@@ -165,14 +166,19 @@ class EditCodePopover(private val editor: Editor) {
         private val observableProperties: ObservableProperties
     ) : ComponentPredicate() {
         override fun invoke(): Boolean {
-            if (!editor.selectionModel.hasSelection()) {
+            // 使用ReadAction.compute来安全地访问编辑器模型
+            val hasSelection = ReadAction.compute<Boolean, RuntimeException> {
+                editor.selectionModel.hasSelection()
+            }
+            
+            if (!hasSelection) {
                 button.toolTipText = "Please select code to continue"
             }
             if (promptTextField.text.isEmpty()) {
                 button.toolTipText = "Please enter a prompt to continue"
             }
 
-            return editor.selectionModel.hasSelection()
+            return hasSelection
                     && promptTextField.text.isNotEmpty()
                     && observableProperties.loading.get().not()
         }

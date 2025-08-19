@@ -87,6 +87,22 @@ public final class MetricsSettings implements PersistentStateComponent<MetricsSe
         state.onlyTrackAIUsage = enabled;
     }
     
+    public boolean isWebServerEnabled() {
+        return state.webServerEnabled;
+    }
+    
+    public void setWebServerEnabled(boolean enabled) {
+        state.webServerEnabled = enabled;
+    }
+    
+    public int getWebServerPort() {
+        return state.webServerPort;
+    }
+    
+    public void setWebServerPort(int port) {
+        state.webServerPort = port;
+    }
+    
     // 状态持久化
     @Override
     public @Nullable State getState() {
@@ -111,5 +127,9 @@ public final class MetricsSettings implements PersistentStateComponent<MetricsSe
         // 新增设置项
         public boolean autoDetectionEnabled = false; // 默认禁用自动检测，避免误判
         public boolean onlyTrackAIUsage = true; // 默认只跟踪真正的AI使用
+        
+        // Web服务器设置
+        public boolean webServerEnabled = true; // 默认启用Web服务器
+        public int webServerPort = 8090; // 默认端口8090
     }
 }

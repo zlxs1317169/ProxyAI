@@ -152,7 +152,7 @@ public class MetricsDataValidator {
                 stats.todayCompletions = todayStats.codeCompletionsCount;
                 stats.todayChatSessions = todayStats.chatSessionsCount;
                 stats.todayTimeSaved = todayStats.timeSavedMs;
-                stats.todayLinesGenerated = todayStats.linesGenerated;
+                                                stats.todayLinesGenerated = todayStats.totalLinesGenerated;
             }
         } catch (Exception e) {
             System.err.println("检查数据收集统计时发生错误: " + e.getMessage());

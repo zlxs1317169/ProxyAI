@@ -26,8 +26,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * AI编程助手提效仪表板
- * 可视化展示各种提效指标和统计数据
+// * AI编程助手提效仪表板
+// * 可视化展示各种提效指标和统计数据
  */
 public class ProductivityDashboard implements ToolWindowFactory {
     
@@ -503,7 +503,7 @@ public class ProductivityDashboard implements ToolWindowFactory {
                 reportText.append("- 代码补全次数: ").append(todayStats.codeCompletionsCount).append(" 次\n");
                 reportText.append("- 聊天会话次数: ").append(todayStats.chatSessionsCount).append(" 次\n");
                 reportText.append("- 今日节省时间: ").append(String.format("%.1f", todayStats.timeSavedMs / 1000.0 / 3600.0)).append(" 小时\n");
-                reportText.append("- 今日生成代码: ").append(todayStats.linesGenerated).append(" 行\n\n");
+                reportText.append("- 今日生成代码: ").append(todayStats.totalLinesGenerated).append(" 行\n\n");
                 
                 reportText.append("🎯 效率分析:\n");
                 if (report.avgEfficiencyGain > 50) {

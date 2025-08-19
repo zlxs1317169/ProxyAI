@@ -159,13 +159,13 @@ public class MetricsDiagnostic {
             System.out.println("📅 今日数据统计:");
             System.out.println("   - 代码补全次数: " + todayStats.codeCompletionsCount);
             System.out.println("   - 聊天会话次数: " + todayStats.chatSessionsCount);
-            System.out.println("   - 生成代码行数: " + todayStats.linesGenerated);
+                                    System.out.println("   - 生成代码行数: " + todayStats.totalLinesGenerated);
             System.out.println("   - 节省时间: " + String.format("%.2f分钟", todayStats.timeSavedMs / 1000.0 / 60.0));
             
             // 检查是否有数据
             boolean hasData = todayStats.codeCompletionsCount > 0 || 
                             todayStats.chatSessionsCount > 0 || 
-                            todayStats.linesGenerated > 0;
+                                                                todayStats.totalLinesGenerated > 0;
             
             if (!hasData) {
                 System.out.println("⚠️  今日没有收集到任何数据");

@@ -8,6 +8,7 @@ import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.openapi.components.service
 import ee.carlrobert.codegpt.CodeGPTKeys.REMAINING_CODE_COMPLETION
 import ee.carlrobert.codegpt.codecompletions.edit.GrpcClientService
+import ee.carlrobert.codegpt.metrics.SafeMetricsCollector
 import ee.carlrobert.codegpt.settings.service.FeatureType
 import ee.carlrobert.codegpt.settings.service.ModelSelectionService
 import ee.carlrobert.codegpt.settings.service.ServiceType
@@ -75,9 +76,18 @@ class DebouncedCodeCompletionProvider : DebouncedInlineCompletionProvider() {
                 var eventListener = CodeCompletionEventListener(request.editor, this)
 
                 if (service<ModelSelectionService>().getServiceForFeature(FeatureType.CODE_COMPLETION) == ServiceType.PROXYAI) {
-                    project.service<GrpcClientService>()
-                        .getCodeCompletionAsync(eventListener, request, this)
-                    return@channelFlow
+                    try {
+                        project.service<GrpcClientService>()
+                            .getCodeCompletionAsync(eventListener, request, this)
+                        
+                        // 记录代码补全请求指标
+                        project?.let { SafeMetricsCollector.recordCodeCompletionRequest(it) }
+                        return@channelFlow
+                    } catch (e: Exception) {
+                        // gRPC连接失败时的降级处理
+                        project?.let { SafeMetricsCollector.recordCodeCompletionError(it, e.message ?: "gRPC连接失败") }
+                        // 继续使用其他服务提供者
+                    }
                 }
 
                 val infillRequest = InfillRequestUtil.buildInfillRequest(request)

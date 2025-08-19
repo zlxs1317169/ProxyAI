@@ -28,6 +28,10 @@ public class MetricsSettingsComponent {
     private final JBCheckBox autoDetectionCheckBox = new JBCheckBox("启用自动检测代码补全");
     private final JBCheckBox onlyTrackAIUsageCheckBox = new JBCheckBox("仅跟踪真实AI使用");
     
+    // Web服务器设置
+    private final JBCheckBox webServerEnabledCheckBox = new JBCheckBox("启用Web服务器");
+    private final JSpinner webServerPortSpinner = new JSpinner(new SpinnerNumberModel(8090, 1024, 65535, 1));
+    
     private final JButton clearDataButton = new JButton("清空所有数据");
     private final JButton exportReportButton = new JButton("立即导出报告");
     private final JButton viewStatsButton = new JButton("查看统计信息");
@@ -71,6 +75,9 @@ public class MetricsSettingsComponent {
             .addLabeledComponent(new JBLabel("导出间隔(小时):"), exportIntervalSpinner, 1, false)
             .addVerticalGap(10)
             .addComponent(detailedLoggingCheckBox, 1)
+            .addVerticalGap(10)
+            .addComponent(webServerEnabledCheckBox, 1)
+            .addLabeledComponent(new JBLabel("Web服务器端口:"), webServerPortSpinner, 1, false)
             .addComponentFillVertically(new JPanel(), 0)
             .getPanel();
         
