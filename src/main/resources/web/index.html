@@ -6,119 +6,161 @@
     <title>ProxyAI 效能度量系统</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #f5f5f5;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
         }
+        
         .container {
             max-width: 1200px;
             margin: 0 auto;
             background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             overflow: hidden;
         }
+        
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 30px;
             text-align: center;
         }
+        
         .header h1 {
             margin: 0;
             font-size: 2.5em;
             font-weight: 300;
         }
+        
         .header p {
             margin: 10px 0 0 0;
             opacity: 0.9;
             font-size: 1.1em;
         }
+        
         .content {
             padding: 30px;
         }
-        .metrics-grid {
+        
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
-        .metric-card {
+        
+        .stat-card {
             background: #f8f9fa;
-            border-radius: 8px;
+            border-radius: 10px;
             padding: 20px;
+            text-align: center;
             border-left: 4px solid #667eea;
+            transition: transform 0.2s;
         }
-        .metric-card h3 {
-            margin: 0 0 15px 0;
-            color: #333;
-            font-size: 1.2em;
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
         }
-        .metric-value {
+        
+        .stat-value {
             font-size: 2em;
             font-weight: bold;
             color: #667eea;
             margin-bottom: 10px;
         }
-        .metric-description {
+        
+        .stat-label {
             color: #666;
             font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
-        .chart-container {
-            background: white;
-            border-radius: 8px;
+        
+        .api-section {
+            background: #f8f9fa;
+            border-radius: 10px;
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        .chart-container h3 {
-            margin: 0 0 20px 0;
-            color: #333;
+        
+        .api-section h3 {
+            color: #667eea;
+            margin-top: 0;
         }
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
+        
+        .api-endpoint {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
         }
-        .data-table th,
-        .data-table td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
         }
-        .data-table th {
-            background: #f8f9fa;
-            font-weight: 600;
-            color: #333;
+        
+        .status-online {
+            background: #28a745;
         }
-        .data-table tr:hover {
-            background: #f8f9fa;
+        
+        .status-offline {
+            background: #dc3545;
         }
+        
+        .refresh-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.2s;
+        }
+        
+        .refresh-btn:hover {
+            background: #5a6fd8;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
         .loading {
             text-align: center;
             padding: 40px;
             color: #666;
         }
-        .error {
-            background: #fee;
-            color: #c33;
-            padding: 15px;
-            border-radius: 4px;
-            margin: 20px 0;
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
         }
-        .refresh-btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            margin-bottom: 20px;
-        }
-        .refresh-btn:hover {
-            background: #5a6fd8;
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -126,179 +168,184 @@
     <div class="container">
         <div class="header">
             <h1>🚀 ProxyAI 效能度量系统</h1>
-            <p>实时监控 AI 辅助开发的生产力指标</p>
+            <p>实时监控和分析AI编程助手的效能表现</p>
         </div>
         
         <div class="content">
-            <button class="refresh-btn" onclick="loadAllData()">🔄 刷新数据</button>
+            <div class="status-section">
+                <h2>
+                    <span class="status-indicator status-online" id="statusIndicator"></span>
+                    系统状态
+                </h2>
+                <p>Web服务器运行状态: <span id="serverStatus">检查中...</span></p>
+                <button class="refresh-btn" onclick="refreshData()">🔄 刷新数据</button>
+            </div>
             
-            <div class="metrics-grid">
-                <div class="metric-card">
-                    <h3>总请求数</h3>
-                    <div class="metric-value" id="totalRequests">-</div>
-                    <div class="metric-description">累计处理的 AI 请求总数</div>
-                </div>
-                <div class="metric-card">
-                    <h3>平均处理时间</h3>
-                    <div class="metric-value" id="avgProcessingTime">-</div>
-                    <div class="metric-description">AI 响应的平均处理时间（毫秒）</div>
-                </div>
-                <div class="metric-card">
-                    <h3>平均接受率</h3>
-                    <div class="metric-value" id="avgAcceptanceRate">-</div>
-                    <div class="metric-description">生成代码的平均接受率</div>
+            <div class="stats-grid" id="statsGrid">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>正在加载数据...</p>
                 </div>
             </div>
             
-            <div class="chart-container">
-                <h3>📊 操作类型分布</h3>
-                <div id="actionTypeChart" class="loading">加载中...</div>
+            <div class="api-section">
+                <h3>📊 API接口</h3>
+                <p>以下是可用的数据接口：</p>
+                
+                <div class="api-endpoint">
+                    <strong>GET</strong> /api/metrics - 获取所有指标数据
+                </div>
+                
+                <div class="api-endpoint">
+                    <strong>GET</strong> /api/metrics/summary - 获取数据摘要
+                </div>
+                
+                <div class="api-endpoint">
+                    <strong>GET</strong> /api/metrics/actions - 获取动作类型统计
+                </div>
+                
+                <div class="api-endpoint">
+                    <strong>GET</strong> /api/metrics/models - 获取模型使用统计
+                </div>
             </div>
             
-            <div class="chart-container">
-                <h3>🌐 编程语言分布</h3>
-                <div id="languageChart" class="loading">加载中...</div>
-            </div>
-            
-            <div class="chart-container">
-                <h3>📋 最近指标数据</h3>
-                <div id="recentMetrics" class="loading">加载中...</div>
-            </div>
+            <div id="errorContainer" style="display: none;"></div>
         </div>
     </div>
 
     <script>
-        // 格式化数字
-        function formatNumber(num) {
-            if (num === null || num === undefined) return '-';
-            if (typeof num === 'number') {
-                if (num % 1 === 0) return num.toLocaleString();
-                return num.toFixed(2);
-            }
-            return num;
-        }
+        // 页面加载完成后自动刷新数据
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshData();
+        });
         
-        // 格式化时间
-        function formatTime(timestamp) {
-            if (!timestamp) return '-';
-            const date = new Date(timestamp);
-            return date.toLocaleString('zh-CN');
-        }
-        
-        // 加载摘要数据
-        async function loadSummary() {
+        // 刷新数据函数
+        async function refreshData() {
             try {
+                // 显示加载状态
+                document.getElementById('statsGrid').innerHTML = `
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>正在加载数据...</p>
+                    </div>
+                `;
+                
+                // 隐藏错误信息
+                document.getElementById('errorContainer').style.display = 'none';
+                
+                // 获取数据摘要
                 const response = await fetch('/api/metrics/summary');
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+                
                 const data = await response.json();
                 
-                // 安全地设置数据，提供默认值
-                document.getElementById('totalRequests').textContent = formatNumber(data.totalRequests || 0);
-                document.getElementById('avgProcessingTime').textContent = formatNumber(data.averageProcessingTime || 0) + 'ms';
-                document.getElementById('avgAcceptanceRate').textContent = formatNumber(data.averageAcceptanceRate || 0) + '%';
+                // 更新状态指示器
+                document.getElementById('statusIndicator').className = 'status-indicator status-online';
+                document.getElementById('serverStatus').textContent = '在线';
                 
-                // 渲染操作类型图表
-                renderActionTypeChart(data.actionTypeCounts || {});
-                renderLanguageChart(data.languageCounts || {});
+                // 更新统计数据
+                updateStats(data);
                 
             } catch (error) {
-                console.error('加载摘要数据失败:', error);
-                document.getElementById('totalRequests').textContent = '错误';
-                document.getElementById('avgProcessingTime').textContent = '错误';
-                document.getElementById('avgAcceptanceRate').textContent = '错误';
+                console.error('获取数据失败:', error);
                 
                 // 显示错误信息
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'error';
-                errorDiv.textContent = '加载摘要数据失败: ' + error.message;
-                document.querySelector('.content').insertBefore(errorDiv, document.querySelector('.metrics-grid'));
+                document.getElementById('errorContainer').innerHTML = `
+                    <div class="error-message">
+                        <strong>数据加载失败</strong><br>
+                        错误信息: ${error.message}<br>
+                        请检查Web服务器是否正在运行，或者稍后重试。
+                    </div>
+                `;
+                document.getElementById('errorContainer').style.display = 'block';
+                
+                // 更新状态指示器
+                document.getElementById('statusIndicator').className = 'status-indicator status-offline';
+                document.getElementById('serverStatus').textContent = '离线';
+                
+                // 显示默认统计卡片
+                showDefaultStats();
             }
         }
         
-        // 渲染操作类型图表
-        function renderActionTypeChart(actionCounts) {
-            const container = document.getElementById('actionTypeChart');
-            if (!actionCounts || Object.keys(actionCounts).length === 0) {
-                container.innerHTML = '<p>暂无数据</p>';
-                return;
-            }
+        // 更新统计数据
+        function updateStats(data) {
+            const statsGrid = document.getElementById('statsGrid');
             
-            let html = '<table class="data-table"><thead><tr><th>操作类型</th><th>数量</th></tr></thead><tbody>';
-            for (const [type, count] of Object.entries(actionCounts)) {
-                html += `<tr><td>${type}</td><td>${count}</td></tr>`;
-            }
-            html += '</tbody></table>';
-            container.innerHTML = html;
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${data.totalRequests || 0}</div>
+                    <div class="stat-label">总请求数</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-value">${data.successfulRequests || 0}</div>
+                    <div class="stat-label">成功请求</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-value">${data.totalLinesGenerated || 0}</div>
+                    <div class="stat-label">生成代码行数</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-value">${(data.averageAcceptanceRate * 100 || 0).toFixed(1)}%</div>
+                    <div class="stat-label">代码接受率</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-value">${(data.averageProcessingTime || 0).toFixed(2)}s</div>
+                    <div class="stat-label">平均处理时间</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-value">${(data.totalTimeSaved || 0).toFixed(2)}h</div>
+                    <div class="stat-label">节省时间</div>
+                </div>
+            `;
         }
         
-        // 渲染编程语言图表
-        function renderLanguageChart(languageCounts) {
-            const container = document.getElementById('languageChart');
-            if (!languageCounts || Object.keys(languageCounts).length === 0) {
-                container.innerHTML = '<p>暂无数据</p>';
-                return;
-            }
+        // 显示默认统计卡片
+        function showDefaultStats() {
+            const statsGrid = document.getElementById('statsGrid');
             
-            let html = '<table class="data-table"><thead><tr><th>编程语言</th><th>使用次数</th></tr></thead><tbody>';
-            for (const [language, count] of Object.entries(languageCounts)) {
-                html += `<tr><td>${language}</td><td>${count}</td></tr>`;
-            }
-            html += '</tbody></table>';
-            container.innerHTML = html;
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">总请求数</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">成功请求</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">生成代码行数</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-value">0%</div>
+                    <div class="stat-label">代码接受率</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-value">0.00s</div>
+                    <div class="stat-label">平均处理时间</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-value">0.00h</div>
+                    <div class="stat-label">节省时间</div>
+                </div>
+            `;
         }
         
-        // 加载最近指标数据
-        async function loadRecentMetrics() {
-            try {
-                const response = await fetch('/api/metrics');
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                const data = await response.json();
-                
-                const container = document.getElementById('recentMetrics');
-                if (!data || data.length === 0) {
-                    container.innerHTML = '<p>暂无数据</p>';
-                    return;
-                }
-                
-                let html = '<table class="data-table"><thead><tr><th>操作类型</th><th>模型</th><th>编程语言</th><th>响应时间</th><th>接受率</th><th>创建时间</th></tr></thead><tbody>';
-                
-                // 确保data是数组，如果不是则转换为数组
-                const metricsArray = Array.isArray(data) ? data : [data];
-                metricsArray.slice(0, 20).forEach(metric => {
-                    html += `<tr>
-                        <td>${metric.actionType || '-'}</td>
-                        <td>${metric.modelName || '-'}</td>
-                        <td>${metric.programmingLanguage || '-'}</td>
-                        <td>${formatNumber(metric.responseTime)}ms</td>
-                        <td>${formatNumber(metric.acceptanceRate)}%</td>
-                        <td>${formatTime(metric.timestamp)}</td>
-                    </tr>`;
-                });
-                
-                html += '</tbody></table>';
-                container.innerHTML = html;
-                
-            } catch (error) {
-                console.error('加载指标数据失败:', error);
-                document.getElementById('recentMetrics').innerHTML = '<div class="error">加载数据失败: ' + error.message + '</div>';
-            }
-        }
-        
-        // 加载所有数据
-        function loadAllData() {
-            loadSummary();
-            loadRecentMetrics();
-        }
-        
-        // 页面加载完成后自动加载数据
-        document.addEventListener('DOMContentLoaded', loadAllData);
-        
-        // 每30秒自动刷新一次
-        setInterval(loadAllData, 30000);
+        // 自动刷新数据（每30秒）
+        setInterval(refreshData, 30000);
     </script>
 </body>
 </html>

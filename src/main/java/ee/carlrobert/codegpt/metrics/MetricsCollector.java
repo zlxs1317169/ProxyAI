@@ -143,11 +143,11 @@ public final class MetricsCollector {
         
         try {
             ProductivityMetrics metrics = new ProductivityMetrics("ai_completion_usage", "AI_COMPLETION");
-            metrics.recordCodeCompletion(language, 1, accepted ? 1 : 0, processingTime);
+            metrics.recordCodeCompletion(language, completionText.length(), accepted ? completionText.length() : 0, processingTime);
             metrics.complete();
             metrics.markSuccessful();
             completedMetrics.add(metrics);
-            LOG.debug("Recorded AI completion usage: " + language + ", accepted: " + accepted);
+            LOG.info("AI补全使用记录: " + language + ", 接受: " + accepted + ", 响应时间: " + processingTime + "ms");
         } catch (Exception e) {
             LOG.warn("Failed to record AI completion usage", e);
         }

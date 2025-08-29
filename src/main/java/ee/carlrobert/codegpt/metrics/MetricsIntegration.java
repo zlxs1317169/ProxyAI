@@ -3,7 +3,6 @@ package ee.carlrobert.codegpt.metrics;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -11,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
  * 负责初始化和管理整个度量系统
  */
 @Service
-public final class MetricsIntegration implements StartupActivity {
+public final class MetricsIntegration {
     
     private MetricsCollector metricsCollector;
     private boolean isInitialized = false;
@@ -20,26 +19,22 @@ public final class MetricsIntegration implements StartupActivity {
         return ApplicationManager.getApplication().getService(MetricsIntegration.class);
     }
     
-    @Override
-    public void runActivity(@NotNull Project project) {
-        if (!isInitialized) {
-            initializeMetricsSystem(project);
-            isInitialized = true;
-        }
-    }
-    
     /**
      * 初始化度量系统
      */
-    private void initializeMetricsSystem(Project project) {
+    public void initializeMetricsSystem(Project project) {
+        if (isInitialized) {
+            return;
+        }
+        
         try {
             // 初始化数据收集器
             metricsCollector = new MetricsCollector(project);
-            metricsCollector.runActivity(project);
             
             // 初始化度量服务
             ProductivityMetrics.getInstance();
             
+            isInitialized = true;
             System.out.println("ProxyAI 提效度量系统已启动");
             
         } catch (Exception e) {

@@ -59,6 +59,14 @@ public class ProductivityMetrics {
     private double cpuUsage;
     private String networkLatency;
     
+    // 新增指标字段
+    private long sessionDuration;
+    private int responseLength;
+    private int codeLength;
+    private double codeDensity;
+    private int conceptsLearned;
+    private double learningEfficiency;
+    
     // 扩展数据
     private Map<String, Object> additionalData;
     
@@ -625,6 +633,25 @@ public class ProductivityMetrics {
     public String getNetworkLatency() { return networkLatency; }
     public void setNetworkLatency(String networkLatency) { this.networkLatency = networkLatency; }
 
+    // 新增指标字段的getter和setter
+    public long getSessionDuration() { return sessionDuration; }
+    public void setSessionDuration(long sessionDuration) { this.sessionDuration = sessionDuration; }
+    
+    public int getResponseLength() { return responseLength; }
+    public void setResponseLength(int responseLength) { this.responseLength = responseLength; }
+    
+    public int getCodeLength() { return codeLength; }
+    public void setCodeLength(int codeLength) { this.codeLength = codeLength; }
+    
+    public double getCodeDensity() { return codeDensity; }
+    public void setCodeDensity(double codeDensity) { this.codeDensity = codeDensity; }
+    
+    public int getConceptsLearned() { return conceptsLearned; }
+    public void setConceptsLearned(int conceptsLearned) { this.conceptsLearned = conceptsLearned; }
+    
+    public double getLearningEfficiency() { return learningEfficiency; }
+    public void setLearningEfficiency(double learningEfficiency) { this.learningEfficiency = learningEfficiency; }
+
     public Map<String, Object> getAdditionalData() { return additionalData; }
     public void setAdditionalData(Map<String, Object> additionalData) { this.additionalData = additionalData; }
 
@@ -642,4 +669,88 @@ public class ProductivityMetrics {
                 actionId, actionType, modelName, responseTime, linesGenerated, linesAccepted, 
                 acceptanceRate, successful, getEfficiencyScore());
     }
+    
+    /**
+     * 记录代码生成指标
+     */
+    public void recordCodeGeneration(int linesGenerated, int linesApplied, long sessionDuration) {
+        try {
+            this.linesGenerated = linesGenerated;
+            this.linesAccepted = linesApplied;
+            this.sessionDuration = sessionDuration;
+            
+            // 计算接受率
+            if (linesGenerated > 0) {
+                this.acceptanceRate = (double) linesApplied / linesGenerated;
+            }
+            
+            updateMetrics();
+            System.out.println("代码生成记录: 生成行数=" + linesGenerated + 
+                             ", 应用行数=" + linesApplied + 
+                             ", 会话时长=" + sessionDuration + "ms");
+        } catch (Exception e) {
+            System.err.println("记录代码生成指标时发生错误: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 记录AI响应指标
+     */
+    public void recordAIResponse(int responseLength, int codeLength) {
+        try {
+            this.responseLength = responseLength;
+            this.codeLength = codeLength;
+            
+            // 计算代码密度
+            if (responseLength > 0) {
+                this.codeDensity = (double) codeLength / responseLength;
+            }
+            
+            updateMetrics();
+            System.out.println("AI响应记录: 响应长度=" + responseLength + 
+                             ", 代码长度=" + codeLength + 
+                             ", 代码密度=" + String.format("%.2f", codeDensity));
+        } catch (Exception e) {
+            System.err.println("记录AI响应指标时发生错误: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 更新指标数据
+     */
+    private void updateMetrics() {
+        this.updatedAt = LocalDateTime.now();
+        this.endTime = Instant.now().toEpochMilli();
+        if (this.startTime > 0) {
+            this.responseTime = this.endTime - this.startTime;
+        }
+    }
+    
+    /**
+     * 获取扩展数据作为JSON字符串
+     */
+    public String getAdditionalDataAsJson() {
+        try {
+            if (additionalData == null || additionalData.isEmpty()) {
+                return "{}";
+            }
+            // 简单的JSON格式转换
+            StringBuilder json = new StringBuilder("{");
+            boolean first = true;
+            for (Map.Entry<String, Object> entry : additionalData.entrySet()) {
+                if (!first) {
+                    json.append(",");
+                }
+                json.append("\"").append(entry.getKey()).append("\":\"")
+                    .append(entry.getValue() != null ? entry.getValue().toString() : "").append("\"");
+                first = false;
+            }
+            json.append("}");
+            return json.toString();
+        } catch (Exception e) {
+            return "{}";
+        }
+    }
+    
+
 }

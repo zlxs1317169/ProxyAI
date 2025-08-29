@@ -33,10 +33,6 @@
         <postStartupActivity implementation="ee.carlrobert.codegpt.LegacyMigrationActivity"/>
         <postStartupActivity implementation="ee.carlrobert.codegpt.CodeGPTProjectActivity"/>
         <postStartupActivity implementation="ee.carlrobert.codegpt.CodeGPTUpdateActivity"/>
-        <postStartupActivity implementation="ee.carlrobert.codegpt.metrics.MetricsStartupActivity"/>
-        <postStartupActivity implementation="ee.carlrobert.codegpt.metrics.EnhancedMetricsStartupActivity"/>
-        <postStartupActivity implementation="ee.carlrobert.codegpt.metrics.WebServerStartupActivity"/>
-        <postStartupActivity implementation="ee.carlrobert.codegpt.metrics.MetricsSystemInitializer"/>
         <editorFactoryListener implementation="ee.carlrobert.codegpt.metrics.MetricsEditorFactoryListener"/>
         <applicationConfigurable id="settings.codegpt" parentId="tools" displayName="ProxyAI"
             instance="ee.carlrobert.codegpt.settings.GeneralSettingsConfigurable"/>
@@ -98,6 +94,7 @@
         <applicationService serviceImplementation="ee.carlrobert.codegpt.metrics.MetricsIntegration"/>
         <applicationService serviceImplementation="ee.carlrobert.codegpt.metrics.AIUsageTracker"/>
         <applicationService serviceImplementation="ee.carlrobert.codegpt.settings.metrics.MetricsSettings"/>
+        <applicationService serviceImplementation="ee.carlrobert.codegpt.metrics.config.MetricsDatabaseConfig"/>
         <inline.completion.provider
           id="CodeGPTInlineCompletionProvider"
           implementation="ee.carlrobert.codegpt.codecompletions.DebouncedCodeCompletionProvider"/>
@@ -334,11 +331,23 @@
                 id="CodeGPT.MetricsMonitor"
                 text="效能度量监控面板"
                 class="ee.carlrobert.codegpt.actions.MetricsMonitorAction"/>
-            <action
+                    <action
                 id="CodeGPT.TestMetricsCollection"
                 text="测试指标收集功能"
                 class="ee.carlrobert.codegpt.actions.TestMetricsCollectionAction"/>
-            <action
+        <action
+                id="CodeGPT.RunMetricsTest"
+                text="运行指标系统测试"
+                class="ee.carlrobert.codegpt.actions.RunMetricsTestAction"/>
+        <action
+                id="CodeGPT.TestDatabaseConnection"
+                text="测试数据库连接"
+                class="ee.carlrobert.codegpt.actions.TestDatabaseConnectionAction"/>
+        <action
+                id="CodeGPT.ClearMetricsData"
+                text="清除指标数据"
+                class="ee.carlrobert.codegpt.actions.ClearMetricsDataAction"/>
+        <action
                 id="CodeGPT.GrpcConnectionDiagnostic"
                 text="诊断gRPC连接问题"
                 class="ee.carlrobert.codegpt.diagnostics.GrpcConnectionDiagnostic"/>

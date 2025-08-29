@@ -80,7 +80,7 @@ dependencies {
         // vulnerable transitive dependency
         exclude(group = "org.jsoup", module = "jsoup")
     }
-    implementation(libs.h2)
+    implementation("mysql:mysql-connector-java:8.0.33")
     implementation(kotlin("stdlib"))
     implementation(kotlin("reflect"))
     implementation(libs.jsoup)

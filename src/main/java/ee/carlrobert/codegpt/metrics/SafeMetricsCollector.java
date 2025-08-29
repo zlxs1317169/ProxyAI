@@ -133,8 +133,30 @@ public class SafeMetricsCollector {
             long processingTime) {
         
         try {
-                                    // CodeCompletionMetricsIntegration.recordCodeCompletionMetrics(editor, text, accepted, processingTime);
-                        // 暂时注释掉，因为 CodeCompletionMetricsIntegration 类不存在
+            // 创建新的指标实例并存储到数据库
+            ProductivityMetrics metrics = new ProductivityMetrics("code_completion", "CODE_COMPLETION");
+            
+            String language = "unknown";
+            if (editor != null && editor.getDocument() != null) {
+                String fileName = editor.getDocument().toString();
+                if (fileName.contains(".java")) language = "java";
+                else if (fileName.contains(".kt")) language = "kotlin";
+                else if (fileName.contains(".py")) language = "python";
+                else if (fileName.contains(".js")) language = "javascript";
+            }
+            
+            // 设置指标数据
+            metrics.setProgrammingLanguage(language);
+            metrics.setLinesGenerated(text.length());
+            metrics.setLinesAccepted(accepted ? text.length() : 0);
+            metrics.setLinesRejected(accepted ? 0 : text.length());
+            metrics.setResponseTime(processingTime);
+            metrics.setSuccessful(accepted);
+            
+            // 存储到数据库
+            MetricsDatabaseManager.getInstance().saveMetrics(metrics);
+            
+            LOG.info("代码补全指标记录: language=" + language + ", 接受: " + accepted + ", 处理时间: " + processingTime + "ms");
         } catch (Exception e) {
             LOG.warn("Failed to safely record code completion metrics", e);
         }
@@ -175,8 +197,16 @@ public class SafeMetricsCollector {
      */
     public static void safeRecordAIResponse(String sessionId, String response, String extractedCode) {
         try {
-            // 这里应该记录AI响应相关的指标
-            // 暂时只是记录日志
+            // 创建新的指标实例并存储到数据库
+            ProductivityMetrics metrics = new ProductivityMetrics("ai_response", "AI_RESPONSE");
+            metrics.setSessionId(sessionId);
+            metrics.setResponseLength(response != null ? response.length() : 0);
+            metrics.setCodeLength(extractedCode != null ? extractedCode.length() : 0);
+            metrics.setSuccessful(true);
+            
+            // 存储到数据库
+            MetricsDatabaseManager.getInstance().saveMetrics(metrics);
+            
             LOG.info("AI Response recorded for session: " + sessionId + ", response length: " + 
                     (response != null ? response.length() : 0) + ", code length: " + 
                     (extractedCode != null ? extractedCode.length() : 0));
@@ -190,8 +220,17 @@ public class SafeMetricsCollector {
      */
     public static void safeRecordAIChatGeneration(String generatedCode, String appliedCode, long sessionDuration, String taskType) {
         try {
-            // 这里应该记录AI聊天代码生成相关的指标
-            // 暂时只是记录日志
+            // 创建新的指标实例并存储到数据库
+            ProductivityMetrics metrics = new ProductivityMetrics("ai_chat_generation", "AI_CHAT_GENERATION");
+            metrics.setLinesGenerated(generatedCode != null ? generatedCode.length() : 0);
+            metrics.setLinesAccepted(appliedCode != null ? appliedCode.length() : 0);
+            metrics.setSessionDuration(sessionDuration);
+            metrics.setSuccessful(true);
+            metrics.addAdditionalData("task_type", taskType);
+            
+            // 存储到数据库
+            MetricsDatabaseManager.getInstance().saveMetrics(metrics);
+            
             LOG.info("AI Chat Code Generation recorded: generated=" + 
                     (generatedCode != null ? generatedCode.length() : 0) + 
                     ", applied=" + (appliedCode != null ? appliedCode.length() : 0) + 
@@ -206,8 +245,18 @@ public class SafeMetricsCollector {
      */
     public static void safeRecordAICompletion(String language, String completionText, boolean accepted, long responseTime) {
         try {
-            // 这里应该记录AI补全相关的指标
-            // 暂时只是记录日志
+            // 创建新的指标实例并存储到数据库
+            ProductivityMetrics metrics = new ProductivityMetrics("ai_completion", "AI_COMPLETION");
+            metrics.setProgrammingLanguage(language);
+            metrics.setLinesGenerated(completionText != null ? completionText.length() : 0);
+            metrics.setLinesAccepted(accepted ? (completionText != null ? completionText.length() : 0) : 0);
+            metrics.setLinesRejected(accepted ? 0 : (completionText != null ? completionText.length() : 0));
+            metrics.setResponseTime(responseTime);
+            metrics.setSuccessful(accepted);
+            
+            // 存储到数据库
+            MetricsDatabaseManager.getInstance().saveMetrics(metrics);
+            
             LOG.info("AI Completion recorded: language=" + language + 
                     ", text length=" + (completionText != null ? completionText.length() : 0) + 
                     ", accepted=" + accepted + ", responseTime=" + responseTime + "ms");

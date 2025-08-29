@@ -20,9 +20,17 @@ public class MetricsStartupActivity implements StartupActivity {
             // 延迟初始化指标系统，避免影响IDE启动速度
             ApplicationManager.getApplication().executeOnPooledThread(() -> {
                 try {
-                    // 只初始化生产力指标服务，避免循环调用
-                    ProductivityMetrics.getInstance();
-                    LOG.info("ProxyAI 指标收集系统已在项目中启动: " + project.getName());
+                    // 等待一段时间确保其他服务已初始化
+                    Thread.sleep(2000);
+                    
+                    // 初始化MetricsIntegration服务
+                    MetricsIntegration integration = MetricsIntegration.getInstance();
+                    if (integration != null) {
+                        integration.initializeMetricsSystem(project);
+                        LOG.info("ProxyAI 指标收集系统已在项目中启动: " + project.getName());
+                    } else {
+                        LOG.warn("无法获取MetricsIntegration服务实例");
+                    }
                     
                 } catch (Exception e) {
                     LOG.warn("初始化指标系统时发生错误", e);
@@ -33,5 +41,4 @@ public class MetricsStartupActivity implements StartupActivity {
             LOG.error("启动指标系统活动时发生错误", e);
         }
     }
-
 }
